@@ -35,7 +35,7 @@ def generate_scaffolds(smiles_list, include_chirality=False):
     """
     scaffolds = {}
     not_parsed = []
-    for idx, smiles, in tqdm(enumerate(smiles_list), desc=">Generating scaffolds"):
+    for idx, smiles in tqdm(enumerate(smiles_list), total=len(smiles_list)):
         mol = Chem.MolFromSmiles(smiles)
         if mol is not None:
             scaffold = MurckoScaffoldSmiles(mol=mol, includeChirality=include_chirality)
@@ -64,8 +64,6 @@ def generate_scaffolds_list(smiles_list, include_chirality=False):
             scaffolds.append(scaffold)
     print(f'Number of unique scaffolds generated: {len(set(scaffolds))}')
     return scaffolds
-
-
 
 
 import random

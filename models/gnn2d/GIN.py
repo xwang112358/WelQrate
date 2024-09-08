@@ -51,6 +51,7 @@ class GIN_Model(torch.nn.Module):
             x = batch_data.x
             edge_index = batch_data.edge_index
             node_embedding = self.encoder(x, edge_index)
+            
         graph_embedding = self.pool(node_embedding, batch_data.batch)
         graph_embedding = self.ffn_dropout(graph_embedding)
         prediction = self.lin2(self.activate_func(self.ff_dropout(self.lin1(graph_embedding))))

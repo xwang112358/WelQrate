@@ -8,7 +8,7 @@ from mol_utils.scaffold_split import (mol_to_smiles, generate_scaffolds, PoorSca
 name = 'AID1798'
 split_scheme = 'AID1798_2d_random_cv1'
 
-dataset =  WelQrateDataset(name, '../poor_dataset', mol_repr='3dmol')
+dataset =  WelQrateDataset(name, '../poor_dataset', mol_repr='2dmol')
 print(dataset[0])
 # split = dataset.get_idx_split(split_scheme)
 

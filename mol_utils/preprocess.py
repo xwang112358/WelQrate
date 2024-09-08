@@ -10,9 +10,6 @@ import rdkit.Chem.rdPartialCharges as rdPartialCharges
 import torch
 from torch_geometric.nn import radius_graph
 
-### Functions that convert SMILES strings to molecular graphs
-# reference: ogb package (smiles to graph dictionary)
-
 
 
 def ReorderCanonicalRankAtoms(mol):
@@ -68,11 +65,6 @@ def smiles2graph(smiles_string, removeHs=True, reorder_atoms=False):
 
     except Exception as e:
         print(f'cannot generate mol, error: {e}, smiles: {smiles_string}')
-
-# not sure below two functions can handle None type mol
-    # mol = mol if removeHs else Chem.AddHs(mol)
-    # if reorder_atoms:
-    #     mol, _ = ReorderCanonicalRankAtoms(mol)
 
     if mol is None:
 
@@ -159,7 +151,7 @@ def smiles2graph(smiles_string, removeHs=True, reorder_atoms=False):
 
     return graph
 
-### Functions that convert InChI strings to molecular graphs
+
 def inchi2graph(inchi_string, removeHs=True, reorder_atoms=False):
     """
     Converts Inchi string to 2D graph Data object
@@ -168,7 +160,6 @@ def inchi2graph(inchi_string, removeHs=True, reorder_atoms=False):
     """
     try:
         mol = Chem.MolFromInchi(inchi_string)
-
         mol = Chem.RemoveHs(mol) if removeHs else mol
         if reorder_atoms:
             mol, _ = ReorderCanonicalRankAtoms(mol)
@@ -178,19 +169,8 @@ def inchi2graph(inchi_string, removeHs=True, reorder_atoms=False):
         mol = None
 
     if mol is None:
+        raise ValueError(f'cannot generate molecule with inchi: {inchi_string}')
 
-    # Create an empty data object
-        graph = Data(
-            edge_index=torch.empty((2, 0), dtype=torch.long),
-            edge_attr=torch.empty((0, 7), dtype=torch.float32),
-            x=torch.empty((0, 28), dtype=torch.float32),
-#             one_hot_atom = torch.empty((0,12), dtype=torch.float32),
-#             atom_num = torch.empty((0,0), dtype=torch.float32),
-            num_nodes=0,
-            num_edges=0,
-            inchi=inchi_string,
-            valid=False
-        )
     else:
         # calculate Gasteiger charges
         rdPartialCharges.ComputeGasteigerCharges(mol)
@@ -227,7 +207,6 @@ def inchi2graph(inchi_string, removeHs=True, reorder_atoms=False):
                 bond_attr.append(is_aromatic)
                 bond_attr.append(is_conjugated)
                 bond_attr.append(is_in_ring)
-                # edge_feature = bond_to_feature_vector(bond)
 
                 # add edges in both directions
                 edges_list.append((i, j))
@@ -235,14 +214,13 @@ def inchi2graph(inchi_string, removeHs=True, reorder_atoms=False):
                 edges_list.append((j, i))
                 edge_features_list.append(bond_attr)
 
-            # data.edge_index: Graph connectivity in COO format with shape [2, num_edges]
+            # [2, num_edges]
             edge_index = torch.tensor(edges_list, dtype = torch.long).t().contiguous()
-
-            # data.edge_attr: Edge feature matrix with shape [num_edges, num_edge_features]
+            # [num_edges, num_edge_features]
             edge_attr = torch.tensor(edge_features_list, dtype=torch.float32)
 
         else:  # mol has no bonds
-            print(inchi_string)
+            print('molecule does not have bond:', inchi_string)
             edge_index = torch.empty((2, 0), dtype=torch.long)
             edge_attr = torch.empty((0, 7), dtype=torch.float32)
 
