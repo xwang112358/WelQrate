@@ -58,7 +58,6 @@ def smiles2graph(smiles_string, removeHs=True, reorder_atoms=False):
     """
     try:
         mol = Chem.MolFromSmiles(smiles_string)
-
         mol = mol if removeHs else Chem.AddHs(mol)
         if reorder_atoms:
             mol, _ = ReorderCanonicalRankAtoms(mol)
@@ -81,16 +80,18 @@ def smiles2graph(smiles_string, removeHs=True, reorder_atoms=False):
             mol = None
 
         if mol is None:
+            raise ValueError(f'cannot generate molecule with smiles: {smiles_string}')
         # Create an empty data object
-            graph = Data(
-                edge_index=np.empty((2, 0), dtype=np.int64),
-                edge_attr=np.empty((0, 3), dtype=np.int64),
-                x=np.empty((0, 39), dtype=np.int64),
-                num_nodes=0,
-                num_edges=0,
-                smiles=smiles_string,
-                valid=False
-            )
+            # graph = Data(
+            #     edge_index=np.empty((2, 0), dtype=np.int64),
+            #     edge_attr=np.empty((0, 3), dtype=np.int64),
+            #     x=np.empty((0, 39), dtype=np.int64),
+            #     num_nodes=0,
+            #     num_edges=0,
+            #     smiles=smiles_string,
+            #     valid=False
+            # )
+            # print('Cannot generate molecule with smiles:', smiles_string, 'Returning empty graph')
     else:
         # calculate Gasteiger charges
         rdPartialCharges.ComputeGasteigerCharges(mol)
@@ -121,7 +122,6 @@ def smiles2graph(smiles_string, removeHs=True, reorder_atoms=False):
                 bond_attr.append(is_aromatic)
                 bond_attr.append(is_conjugated)
                 bond_attr.append(is_in_ring)
-                # edge_feature = bond_to_feature_vector(bond)
 
                 # add edges in both directions
                 edges_list.append((i, j))
@@ -131,13 +131,13 @@ def smiles2graph(smiles_string, removeHs=True, reorder_atoms=False):
 
             # data.edge_index: Graph connectivity in COO format with shape [2, num_edges]
             edge_index = torch.tensor(edges_list).t().contiguous()
-
             # data.edge_attr: Edge feature matrix with shape [num_edges, num_edge_features]
             edge_attr = torch.tensor(edge_features_list, dtype=torch.float32)
 
         else:  # mol has no bonds
             edge_index = torch.from_numpy(np.empty((2, 0)))
             edge_attr = torch.from_numpy(np.empty((0, num_bond_features)))
+            print('Warning: molecule does not have bond:', smiles_string)
 
         graph = Data(
             edge_index=edge_index,
@@ -145,9 +145,8 @@ def smiles2graph(smiles_string, removeHs=True, reorder_atoms=False):
             x=x,
             num_nodes=torch.tensor([len(x)]),
             num_edges=len(edge_index[0]),
-            smiles=smiles_string,
-            valid=True
-        )
+            smiles=smiles_string
+                            )
 
     return graph
 
@@ -189,8 +188,7 @@ def inchi2graph(inchi_string, removeHs=True, reorder_atoms=False):
         atom_num = torch.tensor(atom_num_list, dtype=torch.int64)
         one_hot_atom = torch.tensor(one_hot_atom_list, dtype=torch.int64)
 
-        # bonds
-        num_bond_features = 3  # bond type, bond stereo, is_conjugated
+        # bond features: bond type, bond stereo, is_conjugated
         if len(mol.GetBonds()) > 0:  # mol has bonds
             edges_list = []
             edge_features_list = []
@@ -214,12 +212,10 @@ def inchi2graph(inchi_string, removeHs=True, reorder_atoms=False):
                 edges_list.append((j, i))
                 edge_features_list.append(bond_attr)
 
-            # [2, num_edges]
             edge_index = torch.tensor(edges_list, dtype = torch.long).t().contiguous()
-            # [num_edges, num_edge_features]
             edge_attr = torch.tensor(edge_features_list, dtype=torch.float32)
 
-        else:  # mol has no bonds
+        else: 
             print('molecule does not have bond:', inchi_string)
             edge_index = torch.empty((2, 0), dtype=torch.long)
             edge_attr = torch.empty((0, 7), dtype=torch.float32)
@@ -233,7 +229,6 @@ def inchi2graph(inchi_string, removeHs=True, reorder_atoms=False):
             num_nodes=torch.tensor([len(x)]),
             num_edges=len(edge_index[0]),
             inchi=inchi_string,
-            valid=True
         )
 
     return graph
@@ -277,7 +272,7 @@ def sdffile2mol_conformer(sdffile):
     mol_conformer_lst = list(zip(mol_lst, conformer_lst))
     return mol_conformer_lst, cid_lst
 
-# should be consistent with smiles2graph, can take parameters to output different 3D features for different models
+
 def mol_conformer2graph3d(mol, conformer, removeHs=True, reorder_atoms=False):
     """convert (molecule, conformer) into a 3D graph.
     Args:
@@ -288,14 +283,15 @@ def mol_conformer2graph3d(mol, conformer, removeHs=True, reorder_atoms=False):
     """
     if mol is None:
             # Create an empty data object
-        graph = Data(
-            edge_index=torch.empty((2, 0), dtype=torch.long),
-            edge_attr=torch.empty((0, 3), dtype=torch.float32),
-            x=torch.empty((0, 28), dtype=torch.int64),
-            num_nodes=0,
-            num_edges=0,
-            valid=False
-        )
+        # graph = Data(
+        #     edge_index=torch.empty((2, 0), dtype=torch.long),
+        #     edge_attr=torch.empty((0, 3), dtype=torch.float32),
+        #     x=torch.empty((0, 28), dtype=torch.int64),
+        #     num_nodes=0,
+        #     num_edges=0,
+        #     valid=False
+        # )
+        raise ValueError(f'cannot generate molecule with conformer: {conformer}')
     else:
         mol = Chem.RemoveHs(mol, sanitize=False) if removeHs else mol
         if reorder_atoms:
@@ -319,22 +315,15 @@ def mol_conformer2graph3d(mol, conformer, removeHs=True, reorder_atoms=False):
         one_hot_atom = torch.tensor(one_hot_atom_list, dtype=torch.int64)
 
         # get 3D features: pos + edge_index
-        # distance_adj_matrix = np.zeros((atom_num, atom_num))
         positions = []
         for i in range(len(atom_num)):
             pos = conformer.GetAtomPosition(i)
             coordinate = np.array([pos.x, pos.y, pos.z]).reshape(1, 3)
             positions.append(coordinate)
         positions = np.concatenate(positions, 0)
-        # for i in range(atom_num):
-        #     for j in range(i + 1, atom_num):
-        #         distance_adj_matrix[i,
-        #                             j] = distance_adj_matrix[j, i] = distance3d(
-        #                                 positions[i], positions[j])
-                                    
+                      
         edge_index = radius_graph(torch.tensor(positions), r=6.0, max_num_neighbors=50).to(torch.long)
-        # print(edge_index.shape)
-                                
+                    
         graph = Data(
             edge_index=edge_index,
             x=x,
@@ -343,17 +332,17 @@ def mol_conformer2graph3d(mol, conformer, removeHs=True, reorder_atoms=False):
             atom_num=atom_num,
             num_edges=len(edge_index[0]),
             num_nodes = torch.tensor([len(x)]),
-            valid=True
         )
     
     return graph
 
-### Helper functions
+
 def distance3d(coordinate_1, coordinate_2):
     return np.sqrt(
         sum([(c1 - c2)**2 for c1, c2 in zip(coordinate_1, coordinate_2)]))
 
 pattern_dict = {'[NH-]': '[N-]', '[OH2+]':'[O]'}
+
 
 def smiles_cleaner(smiles):
     '''
@@ -376,31 +365,6 @@ def one_hot_vector(val, lst):
 		val = lst[-1]
 	return map(lambda x: x == val, lst)
 
-# def get_atom_rep(atom):
-#     features = []
-#     # H, C, N, O, F, Si, P, S, Cl, Br, I, other
-#     features += one_hot_vector(atom.GetAtomicNum(), [1, 6, 7, 8, 9, 14, 15, 16, 17, 35, 53, 999])
-#     features += one_hot_vector(len(atom.GetNeighbors()), list(range(1, 5)))
-
-#     features.append(atom.GetFormalCharge())
-#     features.append(atom.IsInRing())
-#     features.append(atom.GetIsAromatic())
-#     features.append(atom.GetExplicitValence())
-#     features.append(atom.GetMass())
-
-#     # Add Gasteiger charge and set to 0 if it is NaN or Infinite
-#     gasteiger_charge = float(atom.GetProp('_GasteigerCharge'))
-#     if math.isnan(gasteiger_charge) or math.isinf(gasteiger_charge):
-#         gasteiger_charge = 0
-#     features.append(gasteiger_charge)
-
-#     # Add Gasteiger H charge and set to 0 if it is NaN or Infinite
-#     gasteiger_h_charge = float(atom.GetProp('_GasteigerHCharge'))
-#     if math.isnan(gasteiger_h_charge) or math.isinf(gasteiger_h_charge):
-#         gasteiger_h_charge = 0
-
-#     features.append(gasteiger_h_charge)
-#     return features
 
 
 
@@ -424,8 +388,5 @@ if __name__ == '__main__':
 
         break
     
-    
-    # print(mol_conformer_lst[0])
-    # call sdffile2mol_conformer
-    
+
     

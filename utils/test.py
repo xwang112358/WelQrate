@@ -30,7 +30,7 @@ def test_class(model, loader, device, type, model_name, save_result=False):
                 out_file.write(f'{all_pred_y[k]}\ty={all_true_y[k]}\n')
                 
     if save_result:
-        rank_prediction(type, model_name, task_type='classification')
+        rank_prediction(type, model_name)
     all_pred_y = np.array(all_pred_y)
     all_true_y = np.array(all_true_y)
     logAUC = calculate_logAUC(all_true_y, all_pred_y)

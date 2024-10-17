@@ -55,12 +55,12 @@ if __name__ == '__main__':
 
     
     if task_type == 'classification':
-        from utils.train import train_class as train
+        from WelQrate.train import train_class as train
         from utils.test import test_class as test
         loss_fn = BCEWithLogitsLoss()
         best_valid_logAUC = -1
     else:
-        from utils.train import train_reg as train
+        from WelQrate.train import train_reg as train
         from utils.test import test_reg as test
         loss_fn = torch.nn.HuberLoss()
         best_valid_mae = 1e9
@@ -249,7 +249,7 @@ if __name__ == '__main__':
     
     best_epoch = 0
     
-    print('\n' + '=' * 10 + ' STARTING TRAINING PROCESS... ' + '=' * 10 + '\n')
+    print( ' STARTING TRAINING PROCESS... ' + '=' * 10 + '\n')
     os.makedirs(f'logs/{model_type}', exist_ok=True)
     os.makedirs('saved_models', exist_ok=True)
     with open(f'logs/{model_type}/loss_per_epoch.log', 'w+') as out_file:

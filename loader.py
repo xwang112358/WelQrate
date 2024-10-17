@@ -32,38 +32,34 @@ def get_train_loader(train_dataset, batch_size, num_workers, seed):
 
     return train_loader
 
-def get_poor_train_loader(train_dataset, batch_size, num_workers, seed, num_well_train_active, num_well_train_inactive):
-    num_poor_train_active = len(torch.nonzero(torch.tensor([data.y for data in train_dataset])))
+# def get_poor_train_loader(train_dataset, batch_size, num_workers, seed, num_well_train_active, num_well_train_inactive):
+#     num_poor_train_active = len(torch.nonzero(torch.tensor([data.y for data in train_dataset])))
 
-    print(f'training # of molecules: {len(train_dataset)}, actives: {num_poor_train_active}')
+#     print(f'training # of molecules: {len(train_dataset)}, actives: {num_poor_train_active}')
 
-    train_sampler_weight = torch.tensor([(1. / num_well_train_inactive)
-                                         if data.y == 0
-                                         else (1. / num_well_train_active)
-                                         for data in
-                                         train_dataset])
+#     train_sampler_weight = torch.tensor([(1. / num_well_train_inactive)
+#                                          if data.y == 0
+#                                          else (1. / num_well_train_active)
+#                                          for data in
+#                                          train_dataset])
 
-    generator = torch.Generator()
-    generator.manual_seed(seed)
+#     generator = torch.Generator()
+#     generator.manual_seed(seed)
 
-    train_sampler = WeightedRandomSampler(weights=train_sampler_weight,
-                                          num_samples=len(
-                                          train_sampler_weight),
-                                          generator=generator)
+#     train_sampler = WeightedRandomSampler(weights=train_sampler_weight,
+#                                           num_samples=len(
+#                                           train_sampler_weight),
+#                                           generator=generator)
 
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=batch_size,
-        sampler=train_sampler,
-        num_workers=num_workers,
-        pin_memory=True
-    )
+#     train_loader = DataLoader(
+#         train_dataset,
+#         batch_size=batch_size,
+#         sampler=train_sampler,
+#         num_workers=num_workers,
+#         pin_memory=True
+#     )
 
-    return train_loader
-
-
-
-
+#     return train_loader
 
 
 def get_test_loader(test_dataset, batch_size, num_workers, seed):
