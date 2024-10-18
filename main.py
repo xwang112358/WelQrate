@@ -244,7 +244,6 @@ if __name__ == '__main__':
     optimizer = AdamW(model.parameters(), weight_decay=weight_decay)
     scheduler = get_scheduler(optimizer, config, dataset[split_dict['train']])
     
-    
     filename = f'saved_models/{dataset_name}_{model_type}_{split_scheme}.pt'
     
     best_epoch = 0

@@ -10,6 +10,8 @@ from loader import get_train_loader, get_test_loader, get_valid_loader
 from scheduler import get_scheduler, get_lr
 from utils.evaluation import calculate_logAUC, cal_EF, cal_DCG, cal_BEDROC_score
 from utils.rank_prediction import rank_prediction
+from torch.nn import BCEWithLogitsLoss
+from torch.optim import AdamW
 
 def get_train_loss(model, loader, optimizer, scheduler, device, loss_fn):
     
@@ -33,18 +35,19 @@ def get_train_loss(model, loader, optimizer, scheduler, device, loss_fn):
     return loss
 
 
-def train(model_dict, dataset, train_dict, optimizer, scheduler, device, loss_fn):
+def train(model, dataset, config, device, train_eval=False):
     # train params: batch_size, num_epochs, weight_decay, peark_lr, ...
     # split_scheme --> dataset --> loaders 
     # load train info
-    batch_size = int(train_dict['batch_size'])
-    num_epochs = int(train_dict['num_epochs'])
-    # weight_decay = float(train_dict['weight_decay'])
-    num_workers = int(train_dict['num_workers'])
-    train_eval = bool(train_dict['train_eval'])
-    early_stopping_limit = int(train_dict['early_stop'])
-    seed = train_dict['seed']
-    split_scheme = train_dict['split_scheme'] 
+    batch_size = int(config['TRAIN']['batch_size'])
+    num_epochs = int(config['TRAIN']['num_epochs'])
+    num_workers = int(config['GENERAL']['num_workers'])
+    seed = int(config['GENERAL']['seed'])
+    weight_decay = float(config['TRAIN']['weight_decay'])
+    early_stopping_limit = int(config['TRAIN']['early_stop'])
+    split_scheme = config['DATA']['split_scheme']
+    
+    loss_fn = BCEWithLogitsLoss()
     
     # load dataset info
     dataset_name = dataset.name
@@ -57,24 +60,26 @@ def train(model_dict, dataset, train_dict, optimizer, scheduler, device, loss_fn
     valid_loader = get_valid_loader(dataset[split_dict['valid']], batch_size, num_workers, seed)
     test_loader = get_test_loader(dataset[split_dict['test']], batch_size, num_workers, seed) 
 
-    
     # load model info
-    model_name = model_dict['model_name']
-    model = model_dict['model']
+    model_name = config['MODEL']['model_name']
+
+    # load optimizer and scheduler
+    optimizer = AdamW(model.parameters())
+    scheduler = get_scheduler(optimizer, config, train_loader)
     
     print('\n' + '=' * 10 + f"Training {model} on {dataset_name}'s {split_scheme} split" '\n' + '=' * 10 )
     torch.manual_seed(seed)
     random.seed(seed)
     np.random.seed(seed)
     
-    timestamp = datetime.now().strftime("%m-%d-%H-%M")
-    base_path = f'./results/{dataset_name}/{split_scheme}/{model_name}/{timestamp}'
+    # timestamp = datetime.now().strftime("%m-%d-%H-%M")
+    base_path = f'./results/{dataset_name}/{split_scheme}/{model_name}'
     model_save_path = os.path.join(base_path, f'{model_name}.pt')
-    log_save_path = os.path.join(base_path, f'{model_name}_train.log')
-    metrics_save_path = os.path.join(base_path, f'test_results_{model_name}.txt')
+    log_save_path = os.path.join(base_path, f'train.log')
+    metrics_save_path = os.path.join(base_path, f'test_results.txt')
     os.makedirs(os.path.dirname(model_save_path), exist_ok=True)
     os.makedirs(os.path.dirname(log_save_path), exist_ok=True)
-    os.mkdir(os.path.dirname(metrics_save_path))
+    os.makedirs(os.path.dirname(metrics_save_path), exist_ok=True)
     
     best_epoch = 0
     best_valid_logAUC = -1
@@ -92,15 +97,15 @@ def train(model_dict, dataset, train_dict, optimizer, scheduler, device, loss_fn
                 train_logAUC, train_EF, train_DCG, train_BEDROC = get_test_metrics(model, train_loader, device)
                 print(f'current_epoch={epoch} train_loss={train_loss:.4f} lr={lr}')
                 print(f'train_logAUC={train_logAUC:.4f} train_EF={train_EF:.4f} train_DCG={train_DCG:.4f} train_BEDROC={train_BEDROC:.4f}')
-                out_file.write(f'{epoch}\tloss={train_loss}\tlogAUC={train_logAUC}\tEF={train_EF}\tDCG={train_DCG}\tBEDROC={train_BEDROC}\tlr={lr}\t\n')
+                out_file.write(f'Epoch:{epoch}\tloss={train_loss}\tlogAUC={train_logAUC}\tEF={train_EF}\tDCG={train_DCG}\tBEDROC={train_BEDROC}\tlr={lr}\t\n')
             
             else:
                 print(f'current_epoch={epoch} train_loss={train_loss:.4f} lr={lr}')
-                out_file.write(f'{epoch}\tloss={train_loss}\tlr={lr}\t\n')
+                out_file.write(f'Epoch:{epoch}\tloss={train_loss}\tlr={lr}\t\n')
                 
             valid_logAUC, valid_EF, valid_DCG, valid_BEDROC = get_test_metrics(model, valid_loader, device, type='valid', save_per_molecule_pred=True, save_path=base_path)  
             print(f'valid_logAUC={valid_logAUC:.4f} valid_EF={valid_EF:.4f} valid_DCG={valid_DCG:.4f} valid_BEDROC={valid_BEDROC:.4f}')
-            out_file.write(f'{epoch}\tlogAUC={valid_logAUC}\tEF={valid_EF}\tDCG={valid_DCG}\tBEDROC={valid_BEDROC}\t\n')  
+            out_file.write(f'Epoch:{epoch}\tlogAUC={valid_logAUC}\tEF={valid_EF}\tDCG={valid_DCG}\tBEDROC={valid_BEDROC}\t\n')  
             
             if valid_logAUC > best_valid_logAUC: 
                 best_valid_logAUC = valid_logAUC

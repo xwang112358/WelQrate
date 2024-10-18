@@ -6,3 +6,5 @@ create_dataset.py
 scaffold_check.py
 # check_scaffold.ipynb
 subset_dataset.pt
+check_isolated_points.py
+results/

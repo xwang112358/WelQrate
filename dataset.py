@@ -49,49 +49,71 @@ class WelQrateDataset(InMemoryDataset):
     @property
     def dataset_info(self):
         return {
-            "AID1798": {
-                "raw_url": "https://vanderbilt.box.com/shared/static/itigbntjvjp6zzw38mn93sjti5ra7ypw.zip",
-                "file_type": "zip",
-                "raw_files": ['AID1798_actives.csv', 'AID1798_inactives.csv', 'AID1798_actives.sdf', 'AID1798_inactives.sdf'],
-                "split_url": "https://vanderbilt.box.com/shared/static/68m9qigxd7kt0xtta3chrx270grd1l4p.zip",
-                "split_file_type": "zip"
-            },
-            "AID2258": {
-                "url": None,  # Placeholder for future URL
-                "file_type": "unknown",  # Update when known
-                "raw_files": ['AID2258_actives.csv', 'AID2258_inactives.csv']  # Assumed file names
-            },
-            "AID2689": {
-                "url": None,  # Placeholder for future URL
-                "file_type": "unknown",  # Update when known
-                "raw_files": ['AID2689_actives.csv', 'AID2689_inactives.csv']  # Assumed file names
-            },
-            "AID435008": {
-                "url": None,  # Placeholder for future URL
-                "file_type": "unknown",  # Update when known
-                "raw_files": ['AID435008_actives.csv', 'AID435008_inactives.csv']  # Assumed file names
-            },
-            "AID435034": {
-                "url": None,  # Placeholder for future URL
-                "file_type": "unknown",  # Update when known
-                "raw_files": ['AID435034_actives.csv', 'AID435034_inactives.csv']  # Assumed file names
-            },
-            "AID463087": {
-                "url": None,  # Placeholder for future URL
-                "file_type": "unknown",  # Update when known
-                "raw_files": ['AID463087_actives.csv', 'AID463087_inactives.csv']  # Assumed file names
-            },
-            "AID485290": {
-                "url": None,  # Placeholder for future URL
-                "file_type": "unknown",  # Update when known
-                "raw_files": ['AID485290_actives.csv', 'AID485290_inactives.csv']  # Assumed file names
-            },
-            "AID488997": {
-                "url": None,  # Placeholder for future URL
-                "file_type": "unknown",  # Update when known
-                "raw_files": ['AID488997_actives.csv', 'AID488997_inactives.csv']  # Assumed file names
-            }
-        }
+                "AID1798": {
+                    "raw_url": "https://vanderbilt.box.com/shared/static/cd2dpdinu8grvi8dye3gi9bzsdt659d1.zip",
+                    "file_type": "zip",
+                    "raw_files": ['AID1798_actives.csv', 'AID1798_inactives.csv', 'AID1798_actives.sdf', 'AID1798_inactives.sdf'],
+                    "split_url": "https://vanderbilt.box.com/shared/static/68m9qigxd7kt0xtta3chrx270grd1l4p.zip",
+                    "split_file_type": "zip"
+                },
+                "AID1843": {
+                    "raw_url": "https://vanderbilt.box.com/shared/static/4f9wl7t9pmkm5p6695owj6bsxin0hdo1.zip",
+                    "file_type": "zip",
+                    "raw_files": ['AID1843_actives.csv', 'AID1843_inactives.csv', 'AID1843_actives.sdf', 'AID1843_inactives.sdf'],
+                    "split_url": "https://vanderbilt.box.com/shared/static/o3hmvwo0surg1vhettflhtxxgn2o6clw.zip",
+                    "split_file_type": "zip"
+                },
+                "AID2258": {
+                    "raw_url": "https://vanderbilt.box.com/shared/static/b1cg619c4f35p9mkm42mgu8a9m86t4at.zip",
+                    "file_type": "zip",
+                    "raw_files": ['AID2258_actives.csv', 'AID2258_inactives.csv', 'AID2258_actives.sdf', 'AID2258_inactives.sdf'],
+                    "split_url": "https://vanderbilt.box.com/shared/static/2hhz7o3vxwjq6p93yzxfrporeze5zzgf.zip",
+                    "split_file_type": "zip"
+                },
+                "AID2689": {
+                    "raw_url": "https://vanderbilt.box.com/shared/static/5no4ut1vusxmxsbwxsmb68o6ix94mxgy.zip",
+                    "file_type": "zip",
+                    "raw_files": ['AID2689_actives.csv', 'AID2689_inactives.csv', 'AID2689_actives.sdf', 'AID2689_inactives.sdf'],
+                    "split_url": "https://vanderbilt.box.com/shared/static/hml9qznmwhhb6rcddw18vp7yoh331wlb.zip",
+                    "split_file_type": "zip"
+                },
+                "AID435008": {
+                    "raw_url": "https://vanderbilt.box.com/shared/static/mu6hfitlenanp11wgm3z7u5drae2ofsd.zip",
+                    "file_type": "zip",
+                    "raw_files": ['AID435008_actives.csv', 'AID435008_inactives.csv', 'AID435008_actives.sdf', 'AID435008_inactives.sdf'],
+                    "split_url": "https://vanderbilt.box.com/shared/static/ybyorbb541gnefjvagbqg1p37jfae98z.zip",
+                    "split_file_type": "zip"
+                },
+                "AID435034": {
+                    "raw_url": "https://vanderbilt.box.com/shared/static/ctk2vs70bsjmpznalqoj4uqbbdkdcbgj.zip",
+                    "file_type": "zip",
+                    "raw_files": ['AID435034_actives.csv', 'AID435034_inactives.csv', 'AID435034_actives.sdf', 'AID435034_inactives.sdf'],
+                    "split_url": "https://vanderbilt.box.com/shared/static/onistu6vrizl4o2nu0xlfhowcf1q498a.zip",
+                    "split_file_type": "zip"
+                },
+                "AID463087": {
+                    "raw_url": "https://vanderbilt.box.com/shared/static/y52n3pzf27ghqtxt0xz899gwuj3yw3m2.zip",
+                    "file_type": "zip",
+                    "raw_files": ['AID463087_actives.csv', 'AID463087_inactives.csv', 'AID463087_actives.sdf', 'AID463087_inactives.sdf'],
+                    "split_url": "https://vanderbilt.box.com/shared/static/y9jkhhu4cljq4awlfkvlo4im6iz3kj5t.zip",
+                    "split_file_type": "zip"
+                },
+                "AID485290": {
+                    "raw_url": "https://vanderbilt.box.com/shared/static/8w0njtoqmgs8g1c12qj0p52w0d3wwbop.zip",
+                    "file_type": "zip",
+                    "raw_files": ['AID485290_actives.csv', 'AID485290_inactives.csv', 'AID485290_actives.sdf', 'AID485290_inactives.sdf'],
+                    "split_url": "https://vanderbilt.box.com/shared/static/2w5byzpf5pk4jqb9rknzdihzztb3u9e6.zip",
+                    "split_file_type": "zip"
+                },
+                "AID488997": {
+                    "raw_url": "https://vanderbilt.box.com/shared/static/rguy1gm36x7clq6822riconznoflc4xe.zip",
+                    "file_type": "zip",
+                    "raw_files": ['AID488997_actives.csv', 'AID488997_inactives.csv', 'AID488997_actives.sdf', 'AID488997_inactives.sdf'],
+                    "split_url": "https://vanderbilt.box.com/shared/static/dceunwrlotxkz58usfgnxr7meziy3cdr.zip",
+                    "split_file_type": "zip"
+                }
+                }   
+
 
     @property
     def raw_file_names(self):
@@ -120,34 +142,34 @@ class WelQrateDataset(InMemoryDataset):
             print(f"Download information for {self.name} is not available.")
             return
 
-        # # Download and extract raw files
-        # if not all(osp.exists(osp.join(self.root, 'raw', f)) for f in dataset_info['raw_files']):
-        #     print(f"Downloading {self.name} raw files...")
-        #     raw_zip_path = osp.join(self.root, 'raw', f'{self.name}.zip')
-        #     subprocess.run(['curl', '-L', dataset_info['raw_url'], '--output', raw_zip_path], check=True)
+        # Download and extract raw files
+        if not all(osp.exists(osp.join(self.root, 'raw', f)) for f in dataset_info['raw_files']):
+            print(f"Downloading {self.name} raw files...")
+            raw_zip_path = osp.join(self.root, 'raw', f'{self.name}.zip')
+            subprocess.run(['curl', '-L', dataset_info['raw_url'], '--output', raw_zip_path], check=True)
             
-        #     print("Extracting raw files...")
-        #     subprocess.run(['unzip', '-j', raw_zip_path, '-d', osp.join(self.root, 'raw')], check=True)
+            print("Extracting raw files...")
+            subprocess.run(['unzip', '-j', raw_zip_path, '-d', osp.join(self.root, 'raw')], check=True)
             
-        #     print("Removing raw zip file...")
-        #     os.remove(raw_zip_path)
+            print("Removing raw zip file...")
+            os.remove(raw_zip_path)
 
         # Download and extract split files
-        # if not os.listdir(osp.join(self.root, 'split')):  # Check if split directory is empty
-        #     print(f"Downloading {self.name} split files...")
-        #     split_zip_path = osp.join(self.root, 'split', f'{self.name}_split.zip')
-        #     subprocess.run(['curl', '-L', dataset_info['split_url'], '--output', split_zip_path], check=True)
+        if not os.listdir(osp.join(self.root, 'split')):  # Check if split directory is empty
+            print(f"Downloading {self.name} split files...")
+            split_zip_path = osp.join(self.root, 'split', f'{self.name}_split.zip')
+            subprocess.run(['curl', '-L', dataset_info['split_url'], '--output', split_zip_path], check=True)
             
-        #     print("Extracting split files...")
-        #     subprocess.run(['unzip', split_zip_path, '-d', osp.join(self.root, 'split')], check=True)
+            print("Extracting split files...")
+            subprocess.run(['unzip', split_zip_path, '-d', osp.join(self.root, 'split')], check=True)
             
-        #     print("Removing split zip file...")
-        #     os.remove(split_zip_path)
+            print("Removing split zip file...")
+            os.remove(split_zip_path)
 
 
     def process(self):
 
-        print(f'molecule representation:{self.mol_repr}.')
+        print(f'molecule representation: {self.mol_repr}')
         if self.mol_repr == '2dmol':   # combine smiles and inchi to 2dmol later
             self.file_type = '.csv'
         elif self.mol_repr == '3dmol':
@@ -187,6 +209,7 @@ class WelQrateDataset(InMemoryDataset):
                     pyg_data.pubchem_cid = torch.tensor([int(cid_list[i])], dtype=torch.int)
                     pyg_data.mol_id = torch.tensor([mol_id], dtype=torch.int)  # index of the molecule in the dataset
                     pyg_data.smiles = smiles_list[i]
+                    pyg_data.mol_id = torch.tensor([mol_id], dtype=torch.int)
                     data_list.append(pyg_data)
                     mol_id += 1
                     
@@ -234,15 +257,21 @@ class WelQrateDataset(InMemoryDataset):
         torch.save((data, slices), processed_file_path)
 
         
-    def get_idx_split(self, split_type = 'random', num = 1):
+    def get_idx_split(self, split_scheme = 'random_cv1'):
+        
+        valid_schemes = [f'random_cv{i}' for i in range(1, 6)] + [f'scaffold_seed{i}' for i in range(1, 6)]
+        if split_scheme not in valid_schemes:
+            raise ValueError(f"Invalid split_scheme. Must be one of {valid_schemes}")
+        
+        num = int(split_scheme[-1])
         path = osp.join(self.root, 'split')
         try: 
-            if split_type == 'random':
-                print(f'loading random split cv {num}')
+            if 'random' in split_scheme:
+                print(f'loading random split cv{num}')
                 split_scheme = f'{self.name}_{self.mol_repr[:2]}_random_cv{num}'
                 split_dict = torch.load(osp.join(path, 'random', f'{split_scheme}.pt'))
-            elif split_type =='scaffold':
-                print(f'loading scaffold split seed {num}')
+            elif 'scaffold' in split_scheme:
+                print(f'loading scaffold split seed{num}')
                 split_scheme = f'{self.name}_{self.mol_repr[:2]}_scaffold_seed{num}'
                 split_dict = torch.load(osp.join(path, 'scaffold', f'{split_scheme}.pt'))
 
@@ -252,11 +281,11 @@ class WelQrateDataset(InMemoryDataset):
         # count the number of active molecules in the split
         y = self.y.squeeze()
         num_active_train = len([x for x in y[split_dict['train']] if x == 1])
-        print(f'training set: {num_active_train} active molecules and {len(split_dict["train"]) - num_active_train} inactive molecules')
+        print(f'train set: {num_active_train} actives and {len(split_dict["train"]) - num_active_train} inactives')
         num_active_valid = len([x for x in y[split_dict['valid']] if x == 1])
-        print(f'validation set: {num_active_valid} active molecules and {len(split_dict["valid"]) - num_active_valid} inactive molecules')
+        print(f'valid set: {num_active_valid} actives and {len(split_dict["valid"]) - num_active_valid} inactives')
         num_active_test = len([x for x in y[split_dict['test']] if x == 1])
-        print(f'test set: {num_active_test} active molecules and {len(split_dict["test"]) - num_active_test} inactive molecules')
+        print(f'test set: {num_active_test} actives and {len(split_dict["test"]) - num_active_test} inactives')
 
 
 
