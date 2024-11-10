@@ -17,4 +17,4 @@ welqrate.egg-info/
 welqrate/models/__pycache__/*
 welqrate/models/gnn2d/__pycache__/*
 welqrate/models/gnn3d/__pycache__/*
-welqrate/models/mlp/__pycache__/*
+welqrate/models/MLP/__pycache__/*
