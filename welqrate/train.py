@@ -6,10 +6,10 @@ from torch_scatter import scatter_add
 import random
 import os
 from datetime import datetime
-from loader import get_train_loader, get_test_loader, get_valid_loader
-from scheduler import get_scheduler, get_lr
-from utils.evaluation import calculate_logAUC, cal_EF, cal_DCG, cal_BEDROC_score
-from utils.rank_prediction import rank_prediction
+from welqrate.loader import get_train_loader, get_test_loader, get_valid_loader
+from welqrate.scheduler import get_scheduler, get_lr
+from welqrate.utils.evaluation import calculate_logAUC, cal_EF, cal_DCG, cal_BEDROC_score
+from welqrate.utils.rank_prediction import rank_prediction
 from torch.nn import BCEWithLogitsLoss
 from torch.optim import AdamW
 
@@ -64,7 +64,7 @@ def train(model, dataset, config, device, train_eval=False):
     model_name = config['MODEL']['model_name']
 
     # load optimizer and scheduler
-    optimizer = AdamW(model.parameters())
+    optimizer = AdamW(model.parameters(), weight_decay=weight_decay)
     scheduler = get_scheduler(optimizer, config, train_loader)
     
     print('\n' + '=' * 10 + f"Training {model} on {dataset_name}'s {split_scheme} split" '\n' + '=' * 10 )

@@ -7,9 +7,9 @@ class GCN_Model(torch.nn.Module):
 
     def __init__(
             self,
-            in_channels,
-            hidden_channels,
-            num_layers,
+            in_channels = 28,
+            hidden_channels = 32,
+            num_layers = 3,
             dropout=0.0,
             act='relu',
             one_hot=False,

@@ -7,7 +7,7 @@ from tqdm import tqdm
 from rdkit import Chem, RDLogger
 from argparse import ArgumentParser
 import pandas as pd
-from mol_utils.preprocess import (smiles2graph, inchi2graph, sdffile2mol_conformer,
+from welqrate.mol_utils.preprocess import (smiles2graph, inchi2graph, sdffile2mol_conformer,
                                   mol_conformer2graph3d)
 from glob import glob
 import numpy as np

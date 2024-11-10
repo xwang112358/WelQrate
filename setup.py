@@ -1,18 +1,37 @@
 from setuptools import setup, find_packages
 
+from setuptools import setup, find_packages
+
 setup(
-    name='welqrate',  # Replace with your desired package name
-    version='0.1.0',  # Version number of your package
+    name='welqrate', 
+    version='0.1.0',  
     description='The official implementation of the WelQrate dataset and benchmark',  
     url='https://github.com/xwang38438/WelQrate.git',  
-    author='Xin Wang',  # Your name
-    author_email='xin.wang.1@vanderbilt.edu',  # Your email
-    packages=find_packages(),  # Automatically finds all packages in your repo
-    install_requires=[],  # List dependencies here if any
+    author='Xin Wang',  
+    author_email='xin.wang.1@vanderbilt.edu',  
+    packages=find_packages(include=["welqrate", "welqrate.*"]),  # Only include 'welqrate' package
+    install_requires=[],  
     classifiers=[
         'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: MIT License',  # Adjust license if needed
-        'Operating System :: OS Independent',
+        'License :: OSI Approved :: MIT License',  
     ],
-    python_requires='>=3.8',  # Python version requirement
+    python_requires='>=3.8',  
 )
+
+
+
+# setup(
+#     name='welqrate', 
+#     version='0.1.0',  
+#     description='The official implementation of the WelQrate dataset and benchmark',  
+#     url='https://github.com/xwang38438/WelQrate.git',  
+#     author='Xin Wang',  
+#     author_email='xin.wang.1@vanderbilt.edu',  
+#     packages=find_packages(),  
+#     install_requires=[],  # List dependencies here if any #rdkit
+#     classifiers=[
+#         'Programming Language :: Python :: 3',
+#         'License :: OSI Approved :: MIT License',  
+#     ],
+#     python_requires='>=3.8',  
+# )
