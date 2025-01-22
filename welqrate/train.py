@@ -1,4 +1,3 @@
-
 from tqdm import tqdm
 import numpy as np
 import torch
@@ -12,6 +11,8 @@ from welqrate.utils.evaluation import calculate_logAUC, cal_EF, cal_DCG, cal_BED
 from welqrate.utils.rank_prediction import rank_prediction
 from torch.nn import BCEWithLogitsLoss
 from torch.optim import AdamW
+import yaml
+
 
 def get_train_loss(model, loader, optimizer, scheduler, device, loss_fn):
     
@@ -72,14 +73,22 @@ def train(model, dataset, config, device, train_eval=False):
     random.seed(seed)
     np.random.seed(seed)
     
-    # timestamp = datetime.now().strftime("%m-%d-%H-%M")
-    base_path = f'./results/{dataset_name}/{split_scheme}/{model_name}'
+    # Modified base path initialization with versioning
+    base_path = f'./results/{dataset_name}/{split_scheme}/{model_name}0'
+    version = 0
+    while os.path.exists(base_path):
+        version += 1
+        base_path = f'./results/{dataset_name}/{split_scheme}/{model_name}{version}'
+    
     model_save_path = os.path.join(base_path, f'{model_name}.pt')
     log_save_path = os.path.join(base_path, f'train.log')
     metrics_save_path = os.path.join(base_path, f'test_results.txt')
     os.makedirs(os.path.dirname(model_save_path), exist_ok=True)
-    os.makedirs(os.path.dirname(log_save_path), exist_ok=True)
-    os.makedirs(os.path.dirname(metrics_save_path), exist_ok=True)
+    # Save config in .cfg format instead of yaml
+    config_save_path = os.path.join(base_path, f'config.cfg')
+    with open(config_save_path, 'w') as file:
+        config.write(file)
+
     
     best_epoch = 0
     best_valid_logAUC = -1
@@ -137,7 +146,7 @@ def train(model, dataset, config, device, train_eval=False):
     with open(metrics_save_path, 'w+') as result_file:
         result_file.write(f'logAUC={test_logAUC}\tEF={test_EF}\tDCG={test_DCG}\tBEDROC={test_BEDROC}\t\n')
     
-    
+    return test_logAUC, test_EF, test_DCG, test_BEDROC
     
 
 def get_test_metrics(model, loader, device, type = 'test', save_per_molecule_pred=False, save_path=None):
@@ -150,6 +159,7 @@ def get_test_metrics(model, loader, device, type = 'test', save_per_molecule_pre
         batch.to(device)
         pred_y = model(batch).cpu().view(-1).detach().numpy()
         true_y = batch.y.view(-1).cpu().numpy()
+        
         for j, _ in enumerate(pred_y):
             all_pred_y.append(pred_y[j])
             all_true_y.append(true_y[j])
@@ -168,7 +178,6 @@ def get_test_metrics(model, loader, device, type = 'test', save_per_molecule_pre
             for i, (score, label) in enumerate(ranked_data):
                 f.write(f"{i}\t{score}\t{label}")
 
-    
     all_pred_y = np.array(all_pred_y)
     all_true_y = np.array(all_true_y)
     logAUC = calculate_logAUC(all_true_y, all_pred_y)
@@ -176,67 +185,3 @@ def get_test_metrics(model, loader, device, type = 'test', save_per_molecule_pre
     DCG = cal_DCG(all_true_y, all_pred_y, 100)
     BEDROC = cal_BEDROC_score(all_true_y, all_pred_y)
     return logAUC, EF, DCG, BEDROC
-
-
-
-# def train_class(model, loader, optimizer, scheduler, device, loss_fn):
-#     model.train()
-#     loss_list = []
-
-#     for i, batch in enumerate(tqdm(loader, miniters=100)):
-#         batch = batch.to(device)
-
-#         # Check for isolated nodes
-#         num_nodes = batch.num_nodes
-#         connection_counts = torch.zeros(num_nodes, dtype=torch.int32, device=device)
-#         ones = torch.ones_like(batch.edge_index[0], dtype=torch.int32)
-
-#         connection_counts = scatter_add(ones, batch.edge_index[0], dim=0, dim_size=num_nodes)
-#         connection_counts += scatter_add(ones, batch.edge_index[1], dim=0, dim_size=num_nodes)
-
-#         # Add self-loops to isolated nodes
-#         isolated_nodes = torch.where(connection_counts == 0)[0]
-#         if len(isolated_nodes) > 0:
-#             self_loops = torch.stack([isolated_nodes, isolated_nodes], dim=0)
-#             batch.edge_index = torch.cat([batch.edge_index, self_loops], dim=1)
-
-#             # Update node features if necessary (e.g., for attention mechanisms)
-#             if hasattr(batch, 'edge_attr') and batch.edge_attr is not None:
-#                 # Create self-loop edge attributes (you may need to adjust this based on your edge attributes)
-#                 self_loop_attr = torch.zeros(len(isolated_nodes), batch.edge_attr.size(1), device=device)
-#                 batch.edge_attr = torch.cat([batch.edge_attr, self_loop_attr], dim=0)
-
-
-#         y_pred = model(batch)
-#         loss = loss_fn(y_pred.view(-1), batch.y.view(-1).float())
-        
-#         loss_list.append(loss.item())
-#         optimizer.zero_grad()
-#         loss.backward()
-#         optimizer.step()
-#         scheduler.step()
-
-#     loss = np.mean(loss_list) 
-#     return loss
-
-
-# def train_reg(model, loader, optimizer, scheduler, device, loss_fn):
-    
-#     model.train()
-#     loss_list = []
-
-#     for i, batch in enumerate(tqdm(loader, miniters=100)):
-#         batch.to(device)
-#         # assert batch.edge_index.max() < batch.x.size(0), f"Edge index {batch.edge_index.max()} exceeds number of nodes"
-#         y_pred = model(batch)
-        
-#         loss = loss_fn(y_pred.view(-1), batch.activity_value.view(-1))
-            
-#         loss_list.append(loss.item())
-#         optimizer.zero_grad()
-#         loss.backward()
-#         optimizer.step()
-#         scheduler.step()
-
-#     loss = np.mean(loss_list)
-#     return loss

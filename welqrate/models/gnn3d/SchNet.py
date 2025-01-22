@@ -191,12 +191,12 @@ class SchnetLayer(torch.nn.Module):
 
 ### Schnet Model
 
-class SchNet(torch.nn.Module):
+class SchNet_Model(torch.nn.Module):
     def __init__(
             self, energy_and_force=False, cutoff=6.0, num_layers=6, in_channels = 28, hidden_channels=128, num_filters=128,
             num_gaussians=50, out_channels=32, one_hot=False):
 
-        super(SchNet, self).__init__()
+        super(SchNet_Model, self).__init__()
         self.encoder = SchnetLayer(energy_and_force=energy_and_force,
                         cutoff=cutoff,
                         input_dim=in_channels,
