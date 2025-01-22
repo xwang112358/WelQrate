@@ -8,7 +8,7 @@ scaffold_check.py
 subset_dataset.pt
 check_isolated_points.py
 results/
-
+datasets/
 # exclude __pycache__
 welqrate/__pycache__/*
 welqrate/utils/__pycache__/*
