@@ -10,6 +10,8 @@ from torch.optim import AdamW
 # AID1843_dataset_2d = WelQrateDataset(dataset_name = 'AID488997', root =f'../dataset_test', mol_repr ='2dmol')
 # # AID1843_dataset_3d = WelQrateDataset(dataset_name = 'AID435034', root =f'../dataset_test', mol_repr ='3dmol')
 
+
+
 # # print(AID1843_dataset_2d[0])
 # # print(AID1843_dataset_3d[0])
 
