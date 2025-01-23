@@ -56,7 +56,7 @@ import torch
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 config = configparser.ConfigParser()
-config.read('./config/example.cfg')
+config.read(['./config/train.cfg', './config/gcn.cfg'])
 
 # Load the model configuration
 hidden_channels = int(config['MODEL']['hidden_channels'])
@@ -66,7 +66,7 @@ model = GCN_Model(hidden_channels=hidden_channels, num_layers=num_layers).to(dev
 # Train the model
 train(model, AID1798_dataset_2d, config, device)
 ```
-Please check out `example.py` for more details.
+Please check out `example.py` for more examples.
 
 ## Citation
 If you find our work helpful, please cite our paper:
