@@ -2,7 +2,7 @@
 
 
 ## Installation
-We provide the recommended environment, which were used for benchmarking. Users can also build their own environment based on their own needs.
+We provide the recommended environment, which were used for benchmarking in the original paper. Users can also build their own environment based on their own needs.
 ```
 conda create -n welqrate python=3.9
 ```
@@ -10,6 +10,15 @@ conda create -n welqrate python=3.9
 ```
 conda install pytorch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 pytorch-cuda=12.1 -c pytorch -c nvidia
 ```
+
+```
+pip install torch_geometric==2.3.1
+```
+
+```
+pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.1.0+cu121.html
+```
+
 
 ```
 pip install -r requirements.txt
@@ -21,7 +30,7 @@ pip install -e .
 
 
 ## Load the Dataset
-Users can download and preprocess the datasets by calling `WelQrateDataset` class. Available datasets include `AID1798`, `AID435008`, AID435034, AID1843, AID2258, AID463087, AID488997, AID2689, and AID485290. Please refer to our [website](https://www.welqrate.org/) for more details. Besides, users can choose between 2D and 3D molecular representations by setting `mol_repr` to `2dmol` or `3dmol`.
+Users can download and preprocess the datasets by calling `WelQrateDataset` class. Available datasets include AID1798, AID435008, AID435034, AID1843, AID2258, AID463087, AID488997, AID2689, and AID485290. Please refer to our [website](https://www.welqrate.org/) for more details. Besides, users can choose between 2D and 3D molecular representations by setting `mol_repr` to `2dmol` or `3dmol`.
 
 ```python
 from welqrate.dataset import WelQrateDataset
@@ -60,7 +69,7 @@ train(model, AID1798_dataset_2d, config, device)
 Please check out `example.py` for more details.
 
 ## Citation
-If you find our work useful, please cite our paper:
+If you find our work helpful, please cite our paper:
 
 
 ```       
