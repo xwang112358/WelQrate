@@ -97,6 +97,25 @@ def calculate_logAUC(true_y, predicted_score, FPR_range=(0.001, 0.1)):
 
 
 def cal_EF(true_y, predicted_score, k):
+    """
+    Calculate the enrichment factor (EF) for a given predicted score and true labels.
+
+    The enrichment factor is a measure of the enrichment of true positives in the top k predictions.
+    It is defined as the ratio of the number of true positives in the top k predictions to the
+    total number of true positives in the dataset, scaled by the ratio of the number of compounds
+    in the selection set to the total number of compounds in the dataset.
+
+    Args:
+        true_y (array_like):
+            Binary class labels. 1 for positive class, 0 otherwise.
+        predicted_score (array_like):
+            Prediction values.
+    
+    Returns:
+        float:
+            Enrichment factor value.
+    """
+
     # Ns: the number of compounds in the selection set (the predicted actives), k
     # N: the number of compounds in the entire dataset
     # ns: the number of true active compounds in the selection set
@@ -119,6 +138,25 @@ def cal_EF(true_y, predicted_score, k):
 
 def cal_DCG(true_y, predicted_score, k):
     # assuming k<= len(true_y) == len(predicted_score)
+    """
+    Calculate the discounted cumulative gain (DCG) for a given predicted score and true labels.
+
+    The DCG is a measure of the cumulative gain of true positives in the top k predictions.
+    It is defined as the sum of the true positives in the top k predictions, discounted by the
+    logarithm of their position in the ranking.
+
+    Args:
+        true_y (array_like):
+            Binary class labels. 1 for positive class, 0 otherwise.
+        predicted_score (array_like):
+            Prediction values.
+        k (int):
+            The number of top predictions to consider.
+    
+    Returns:
+        float:
+            Discounted cumulative gain value.
+    """
 
     order_idx_pred = np.argsort(-predicted_score)
     order_idx_label = np.argsort(-true_y)

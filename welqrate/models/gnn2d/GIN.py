@@ -43,7 +43,7 @@ class GIN_Model(torch.nn.Module):
 
     def forward(self, batch_data):
         if self.one_hot:
-            x = batch_data.one_hot_atom
+            x = batch_data.x_one_hot
             x = x.float()
             edge_index = batch_data.edge_index
             node_embedding = self.encoder(x, edge_index)

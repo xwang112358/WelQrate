@@ -1,6 +1,5 @@
 import math
 
-# allowable multiple choice node and edge features 
 allowable_features = {
     'possible_atomic_num_list' : list(range(1, 119)) + ['misc'],
     'possible_chirality_list' : [
@@ -53,12 +52,7 @@ def safe_index(l, e):
         return l.index(e)
     except:
         return len(l) - 1
-# # miscellaneous case
-# i = safe_index(allowable_features['possible_atomic_num_list'], 'asdf')
-# assert allowable_features['possible_atomic_num_list'][i] == 'misc'
-# # normal case
-# i = safe_index(allowable_features['possible_atomic_num_list'], 2)
-# assert allowable_features['possible_atomic_num_list'][i] == 2
+
 
 def atom_to_feature_vector(atom):
     """
@@ -96,27 +90,6 @@ def atom_to_one_hot_vector(atom):
 
     return atom_feature
 
-    
-
-    # atom_feature = [
-    #         safe_index(allowable_features['possible_atomic_num_list'], atom.GetAtomicNum()),
-    #         # safe_index(allowable_features['possible_chirality_list'], str(atom.GetChiralTag())),
-    #         safe_index(allowable_features['possible_degree_list'], atom.GetTotalDegree()),
-    #         safe_index(allowable_features['possible_formal_charge_list'], atom.GetFormalCharge()),
-    #         # safe_index(allowable_features['possible_numH_list'], atom.GetTotalNumHs()),
-    #         safe_index(allowable_features['possible_number_radical_e_list'], atom.GetNumRadicalElectrons()),
-    #         # safe_index(allowable_features['possible_hybridization_list'], str(atom.GetHybridization())),
-    #         allowable_features['possible_is_aromatic_list'].index(atom.GetIsAromatic()),
-    #         allowable_features['possible_is_in_ring_list'].index(atom.IsInRing()),
-    #         ]
-   
-
-
-# from rdkit import Chem
-# mol = Chem.MolFromSmiles('Cl[C@H](/C=C/C)Br')
-# atom = mol.GetAtomWithIdx(1)  # chiral carbon
-# atom_feature = atom_to_feature_vector(atom)
-# assert atom_feature == [5, 2, 4, 5, 1, 0, 2, 0, 0]
 
 
 def get_atom_feature_dims():
@@ -144,10 +117,7 @@ def bond_to_feature_vector(bond):
                 allowable_features['possible_is_conjugated_list'].index(bond.GetIsConjugated()),
             ]
     return bond_feature
-# uses same molecule as atom_to_feature_vector test
-# bond = mol.GetBondWithIdx(2)  # double bond with stereochem
-# bond_feature = bond_to_feature_vector(bond)
-# assert bond_feature == [1, 2, 0]
+
 
 def get_bond_feature_dims():
     return list(map(len, [
@@ -180,17 +150,7 @@ def atom_feature_vector_to_dict(atom_feature):
     }
 
     return feature_dict
-# # uses same atom_feature as atom_to_feature_vector test
-# atom_feature_dict = atom_feature_vector_to_dict(atom_feature)
-# assert atom_feature_dict['atomic_num'] == 6
-# assert atom_feature_dict['chirality'] == 'CHI_TETRAHEDRAL_CCW'
-# assert atom_feature_dict['degree'] == 4
-# assert atom_feature_dict['formal_charge'] == 0
-# assert atom_feature_dict['num_h'] == 1
-# assert atom_feature_dict['num_rad_e'] == 0
-# assert atom_feature_dict['hybridization'] == 'SP3'
-# assert atom_feature_dict['is_aromatic'] == False
-# assert atom_feature_dict['is_in_ring'] == False
+
 
 def bond_feature_vector_to_dict(bond_feature):
     [bond_type_idx, 
@@ -204,8 +164,3 @@ def bond_feature_vector_to_dict(bond_feature):
     }
 
     return feature_dict
-# # uses same bond as bond_to_feature_vector test
-# bond_feature_dict = bond_feature_vector_to_dict(bond_feature)
-# assert bond_feature_dict['bond_type'] == 'DOUBLE'
-# assert bond_feature_dict['bond_stereo'] == 'STEREOE'
-# assert bond_feature_dict['is_conjugated'] == False

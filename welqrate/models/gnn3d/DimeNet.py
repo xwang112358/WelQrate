@@ -502,7 +502,7 @@ class DimeNet(torch.nn.Module):
         x, pos, batch, edge_index = batch_data.x, batch_data.pos, batch_data.batch, batch_data.edge_index
         # edge_index = radius_graph(pos, r=self.cutoff, batch=batch,
         #                           max_num_neighbors=self.max_num_neighbors)
-        z = torch.argmax(batch_data.one_hot_atom, dim = 1)
+        z = torch.argmax(batch_data.x_one_hot, dim = 1)
         
         # print(z.shape)
         i, j, idx_i, idx_j, idx_k, idx_kj, idx_ji = triplets(

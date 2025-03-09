@@ -1,0 +1,9 @@
+model:
+  model_name: schnet
+  hidden_channels: 64
+  out_channels: 32
+  num_layers: 5
+  energy_and_force: false
+  cutoff: 6.0
+  num_filters: 32
+  num_gaussians: 50 

@@ -42,8 +42,6 @@ class GAT_Model(torch.nn.Module):
         # Pooling operation
         self.pool = global_add_pool
         self.one_hot = one_hot
-        # Feedforward network components
-        # final_out_dim = hidden_channels * heads if not jk else in_channels
         self.ffn_dropout = Dropout(p=0.25)
         self.lin1 = Linear(hidden_channels, 64)
         self.lin2 = Linear(64, 1)
@@ -52,7 +50,7 @@ class GAT_Model(torch.nn.Module):
     def forward(self, batch_data):
         edge_index, edge_attr, batch = batch_data.edge_index, batch_data.edge_attr, batch_data.batch
         if self.one_hot:
-            x = batch_data.one_hot_atom
+            x = batch_data.x_one_hot
             x = x.float()
             node_embedding = self.encoder(x, edge_index, edge_attr=edge_attr)
         else:

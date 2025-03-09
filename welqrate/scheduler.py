@@ -6,7 +6,6 @@
 import math
 from torch.optim.lr_scheduler import _LRScheduler
 
-
 class PolynomialDecayLR(_LRScheduler):
 
     def __init__(self, optimizer, warmup_iterations, tot_iterations, lr, end_lr, power, last_epoch=-1, verbose=False):
@@ -37,19 +36,23 @@ class PolynomialDecayLR(_LRScheduler):
         assert False
 
 def get_scheduler(optimizer, config, dataset):
-
-    num_train_batches = math.ceil(len(dataset)/int(config['TRAIN']['batch_size']))
-
-    tot_iterations = (num_train_batches) * int(config['TRAIN']['num_epochs'])
+    # Calculate total iterations correctly
+    num_train_batches = math.ceil(len(dataset)/int(config['train']['batch_size']))
+    tot_iterations = num_train_batches * int(config['train']['num_epochs'])
     print(f'tot_iterations={tot_iterations}')
-
+    
+    # Calculate warmup iterations as a percentage of total iterations
+    warmup_percentage = float(config['train']['warmup_percentage'])  
+    warmup_iterations = max(1, int(warmup_percentage * tot_iterations))
+    print(f'warmup_iterations={warmup_iterations}')
+    
     scheduler = {
         'scheduler': PolynomialDecayLR(
             optimizer,
-            warmup_iterations=int(config['TRAIN']['warmup_iterations']),
+            warmup_iterations=warmup_iterations,
             tot_iterations=tot_iterations,
-            lr=float(config['TRAIN']['peak_lr']),
-            end_lr=float(config['TRAIN']['end_lr']),
+            lr=float(config['train']['peak_lr']),
+            end_lr=float(config['train']['end_lr']),
             power=1.0,
         ),
         'dataset_name': 'learning_rate',

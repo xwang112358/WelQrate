@@ -18,8 +18,6 @@ class BCL_WelQrateDataset(InMemoryDataset):
         self.root = root
         
         print(f'dataset stored in {self.root}')
-    
-        
         super(BCL_WelQrateDataset, self).__init__(self.root)
         
         self.data, self.slices = torch.load(self.processed_paths[0])
@@ -37,11 +35,11 @@ class BCL_WelQrateDataset(InMemoryDataset):
     # need to change inchi/smiles to 2dmol
     @property
     def processed_file_names(self):
-        return [f'processed_{self.name}_bcl.pt'] # example: processed_2dmol_AID1798.pt, processed_3dmol_AID1798.pt
+        return [f'processed_{self.name}_bcl.pt'] 
     
     @property
     def processed_dir(self):
-        return osp.join(self.root, 'processed') # example: processed/2dmol
+        return osp.join(self.root, 'processed') 
 
     def download(self):
         # wait for the website to be up
@@ -51,10 +49,8 @@ class BCL_WelQrateDataset(InMemoryDataset):
 
         print(f'processing dataset {self.name}')
         RDLogger.DisableLog('rdApp.*')
-        
         data_list = []
         mol_id = 0
-        
         for file_name, label in [(f'{self.name}_actives_bcl_feat.csv', 1),
                                  (f'{self.name}_inactives_bcl_feat.csv', 0)]:
 
@@ -65,7 +61,6 @@ class BCL_WelQrateDataset(InMemoryDataset):
             for i in tqdm(range(len(df))):
                 row = df.iloc[i]
                 pyg_data = Data()
-                
                 if pd.isna(row.iloc[-1]):
                     print(f"Warning: NaN found at index {i} in the last column. Skipping this entry.")
                     continue
@@ -77,12 +72,10 @@ class BCL_WelQrateDataset(InMemoryDataset):
                 data_list.append(pyg_data)
                 mol_id += 1
 
- 
         data, slices = self.collate(data_list)
         processed_file_path = os.path.join(self.processed_dir, f'processed_{self.name}_bcl.pt')
         torch.save((data, slices), processed_file_path)
 
-        
     def get_idx_split(self, split_scheme):
         print(f'loading {split_scheme} split')
         path = osp.join(self.root, 'split')

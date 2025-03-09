@@ -24,10 +24,6 @@ pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -
 pip install -r requirements.txt
 ```
 
-```
-pip install -e .
-```
-
 
 ## Load the Dataset
 Users can download and preprocess the datasets by calling `WelQrateDataset` class. Available datasets include AID1798, AID435008, AID435034, AID1843, AID2258, AID463087, AID488997, AID2689, and AID485290. Please refer to our [website](https://www.welqrate.org/) for more details. Besides, users can choose between 2D and 3D molecular representations by setting `mol_repr` to `2dmol` or `3dmol`.

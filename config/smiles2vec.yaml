@@ -1,0 +1,10 @@
+model:
+  model_name: smiles2vec
+  embedding_dim: 50
+  use_bidir: true
+  use_conv: true
+  filters: 192
+  kernel_size: 5
+  strides: 2
+  rnn_sizes: [224, 384]
+  rnn_types: ['GRU', 'GRU'] 

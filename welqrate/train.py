@@ -1,14 +1,11 @@
 from tqdm import tqdm
 import numpy as np
 import torch
-from torch_scatter import scatter_add
 import random
 import os
-from datetime import datetime
 from welqrate.loader import get_train_loader, get_test_loader, get_valid_loader
 from welqrate.scheduler import get_scheduler, get_lr
-from welqrate.utils.evaluation import calculate_logAUC, cal_EF, cal_DCG, cal_BEDROC_score
-from welqrate.utils.rank_prediction import rank_prediction
+from welqrate.test import get_test_metrics
 from torch.nn import BCEWithLogitsLoss
 from torch.optim import AdamW
 import yaml
@@ -21,7 +18,6 @@ def get_train_loss(model, loader, optimizer, scheduler, device, loss_fn):
 
     for i, batch in enumerate(tqdm(loader, miniters=100)):
         batch.to(device)
-        # assert batch.edge_index.max() < batch.x.size(0), f"Edge index {batch.edge_index.max()} exceeds number of nodes"
         y_pred = model(batch)
         
         loss= loss_fn(y_pred.view(-1), batch.y.view(-1).float())
@@ -36,33 +32,21 @@ def get_train_loss(model, loader, optimizer, scheduler, device, loss_fn):
     return loss
 
 
-def train(model, dataset, config, device, train_eval=False):
-    # train params: batch_size, num_epochs, weight_decay, peark_lr, ...
-    # split_scheme --> dataset --> loaders 
+def train(model, train_loader, valid_loader, test_loader, config, device, train_eval=False, save_path=None):
+
     # load train info
-    batch_size = int(config['TRAIN']['batch_size'])
-    num_epochs = int(config['TRAIN']['num_epochs'])
-    num_workers = int(config['GENERAL']['num_workers'])
-    seed = int(config['GENERAL']['seed'])
-    weight_decay = float(config['TRAIN']['weight_decay'])
-    early_stopping_limit = int(config['TRAIN']['early_stop'])
-    split_scheme = config['DATA']['split_scheme']
+    batch_size = int(config['train']['batch_size'])
+    num_epochs = int(config['train']['num_epochs'])
+    num_workers = int(config['general']['num_workers'])
+    seed = int(config['general']['seed'])
+    weight_decay = float(config['train']['weight_decay'])
+    early_stopping_limit = int(config['train']['early_stop'])
+    split_scheme = config['data']['split_scheme']
+    dataset_name = config['data']['dataset_name']
+    model_name = config['model']['model_name']
     
     loss_fn = BCEWithLogitsLoss()
     
-    # load dataset info
-    dataset_name = dataset.name
-    root = dataset.root
-    mol_repr = dataset.mol_repr
-    
-    # create loader
-    split_dict = dataset.get_idx_split(split_scheme)
-    train_loader = get_train_loader(dataset[split_dict['train']], batch_size, num_workers, seed)
-    valid_loader = get_valid_loader(dataset[split_dict['valid']], batch_size, num_workers, seed)
-    test_loader = get_test_loader(dataset[split_dict['test']], batch_size, num_workers, seed) 
-
-    # load model info
-    model_name = config['MODEL']['model_name']
 
     # load optimizer and scheduler
     optimizer = AdamW(model.parameters(), weight_decay=weight_decay)
@@ -73,25 +57,18 @@ def train(model, dataset, config, device, train_eval=False):
     random.seed(seed)
     np.random.seed(seed)
     
-    # Modified base path initialization with versioning
-    base_path = f'./results/{dataset_name}/{split_scheme}/{model_name}0'
-    version = 0
-    while os.path.exists(base_path):
-        version += 1
-        base_path = f'./results/{dataset_name}/{split_scheme}/{model_name}{version}'
-    
+    base_path = save_path
     model_save_path = os.path.join(base_path, f'{model_name}.pt')
     log_save_path = os.path.join(base_path, f'train.log')
     metrics_save_path = os.path.join(base_path, f'test_results.txt')
     os.makedirs(os.path.dirname(model_save_path), exist_ok=True)
-    # Save config in .cfg format instead of yaml
-    config_save_path = os.path.join(base_path, f'config.cfg')
-    with open(config_save_path, 'w') as file:
-        config.write(file)
+    # save config
+    with open(os.path.join(base_path, f'config.yaml'), 'w') as file:
+        yaml.dump(config, file)
 
     
     best_epoch = 0
-    best_valid_logAUC = -1
+    best_valid_BEDROC = -1
     early_stopping_counter = 0
     print(f'Training with early stopping limit of {early_stopping_limit} epochs')
     
@@ -116,8 +93,8 @@ def train(model, dataset, config, device, train_eval=False):
             print(f'valid_logAUC={valid_logAUC:.4f} valid_EF={valid_EF:.4f} valid_DCG={valid_DCG:.4f} valid_BEDROC={valid_BEDROC:.4f}')
             out_file.write(f'Epoch:{epoch}\tlogAUC={valid_logAUC}\tEF={valid_EF}\tDCG={valid_DCG}\tBEDROC={valid_BEDROC}\t\n')  
             
-            if valid_logAUC > best_valid_logAUC: 
-                best_valid_logAUC = valid_logAUC
+            if valid_BEDROC > best_valid_BEDROC:
+                best_valid_BEDROC = valid_BEDROC
                 best_epoch = epoch
                 torch.save({'model': model.state_dict(),
                             'epoch': epoch}, model_save_path)
@@ -129,7 +106,7 @@ def train(model, dataset, config, device, train_eval=False):
                 print(f'Early stopping at epoch {epoch}')
                 break
         print(f'Training finished')
-        print(f'Best epoch: {best_epoch} with valid logAUC: {best_valid_logAUC:.4f}')
+        print(f'Best epoch: {best_epoch} with valid BEDROC: {best_valid_BEDROC:.4f}')
         
     # testing the model
     if os.path.exists(model_save_path):
@@ -139,49 +116,14 @@ def train(model, dataset, config, device, train_eval=False):
         raise Exception(f'Model not found at {model_save_path}')
    
     print('Testing ...')
-    test_logAUC, test_EF, test_DCG, test_BEDROC = get_test_metrics(model, test_loader, device, 
+    test_logAUC, test_EF100, test_DCG100, test_BEDROC, test_EF500, test_EF1000, test_DCG500, test_DCG1000 = get_test_metrics(model, test_loader, device, 
                                                                    save_per_molecule_pred=True,
-                                                                   save_path=base_path)
-    print(f'{model_name} at epoch {best_epoch} test logAUC: {test_logAUC:.4f} test EF: {test_EF:.4f} test DCG: {test_DCG:.4f} test BEDROC: {test_BEDROC:.4f}')
+                                                                   save_path=base_path, extra_metrics=True)
+    
+    print(f'{model_name} at epoch {best_epoch} test logAUC: {test_logAUC:.4f} test EF: {test_EF100:.4f} test DCG: {test_DCG100:.4f} test BEDROC: {test_BEDROC:.4f}')
     with open(metrics_save_path, 'w+') as result_file:
-        result_file.write(f'logAUC={test_logAUC}\tEF={test_EF}\tDCG={test_DCG}\tBEDROC={test_BEDROC}\t\n')
+        result_file.write(f'logAUC={test_logAUC}\tEF100={test_EF100}\tDCG100={test_DCG100}\tBEDROC={test_BEDROC}\tEF500={test_EF500}\tEF1000={test_EF1000}\tDCG500={test_DCG500}\tDCG1000={test_DCG1000}\n')
     
-    return test_logAUC, test_EF, test_DCG, test_BEDROC
+    return test_logAUC, test_EF100, test_DCG100, test_BEDROC, test_EF500, test_EF1000, test_DCG500, test_DCG1000
     
 
-def get_test_metrics(model, loader, device, type = 'test', save_per_molecule_pred=False, save_path=None):
-    model.eval()
-
-    all_pred_y = []
-    all_true_y = []
-
-    for i, batch in enumerate(tqdm(loader)):
-        batch.to(device)
-        pred_y = model(batch).cpu().view(-1).detach().numpy()
-        true_y = batch.y.view(-1).cpu().numpy()
-        
-        for j, _ in enumerate(pred_y):
-            all_pred_y.append(pred_y[j])
-            all_true_y.append(true_y[j])
-    
-    if save_per_molecule_pred and save_path is not None:
-        filename = os.path.join(save_path, f'per_molecule_pred_of_{type}_set.txt')
-        with open(filename, 'w') as out_file:
-            for k, _ in enumerate(all_pred_y):
-                out_file.write(f'{all_pred_y[k]}\ty={all_true_y[k]}\n')
-        
-        # rank prediction
-        with open(filename, 'r') as f:
-            data = [(float(line.split('\t')[0]), line.split('\t')[1] ) for line in f.readlines()]
-        ranked_data = sorted(data, key=lambda x: x[0], reverse=True)
-        with open(os.path.join(save_path, f'ranked_mol_score_{type}.txt'), 'w') as f:
-            for i, (score, label) in enumerate(ranked_data):
-                f.write(f"{i}\t{score}\t{label}")
-
-    all_pred_y = np.array(all_pred_y)
-    all_true_y = np.array(all_true_y)
-    logAUC = calculate_logAUC(all_true_y, all_pred_y)
-    EF = cal_EF(all_true_y, all_pred_y, 100)
-    DCG = cal_DCG(all_true_y, all_pred_y, 100)
-    BEDROC = cal_BEDROC_score(all_true_y, all_pred_y)
-    return logAUC, EF, DCG, BEDROC

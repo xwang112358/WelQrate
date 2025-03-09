@@ -1,0 +1,4 @@
+model:
+  model_name: mlp
+  hidden_channels: 128
+  num_layers: 3 

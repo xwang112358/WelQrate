@@ -5,39 +5,62 @@ import os
 import os.path as osp
 from tqdm import tqdm
 from rdkit import Chem, RDLogger
-from argparse import ArgumentParser
 import pandas as pd
 from welqrate.mol_utils.preprocess import (smiles2graph, inchi2graph, sdffile2mol_conformer,
                                   mol_conformer2graph3d)
 from glob import glob
-import numpy as np
-import random
-import zipfile
 import subprocess
 
 
 class WelQrateDataset(InMemoryDataset):
-    def __init__(self, dataset_name, root ='dataset', mol_repr ='2dmol', task_type='classification'):
-        if task_type not in ['classification', 'regression']:
-            raise ValueError("task_type must be either 'classification' or 'regression'")
+    r"""
+    Nine WelQrate Datasets from the Paper: 
+    `"WelQrate: Defining the Gold Standard in Small Molecule Drug Discovery" 
+    https://arxiv.org/pdf/2411.09820`
+    
+    Args:
+        dataset_name (str): Name of the WelQrate dataset to load, e.g., 'AID1798', 'AID1843'
+        mol_repr (str): Molecule representation, either '2d_graph' or '3d_graph'
+        source (str): Source of the raw molecule data for 2D graph, either 'smiles' or 'inchi'
+
+    Returns:
+        Common attributes:
+            y: label of the molecule
+            smiles: smiles of the molecule
+            inchi: inchi of the molecule
+            pubchem_cid: pubchem cid of the molecule
+            mol_id: id of the molecule in the dataset
+        2D graph:
+            x: atom features
+            x_one_hot: one-hot encoding of the atom types
+            edge_index: connectivity of the graph
+            edge_attr: bond features
+        3D graph:
+            x: atom features
+            x_one_hot: one-hot encoding of the atom types
+            edge_index: connectivity of the graph calculated by radius graph
+            pos: 3D coordinates of the atoms
+            atom_num: atomic number of the atoms e.g., [1, 6, 8, 1, 1]
+    """
+
+    def __init__(self, 
+                 dataset_name: str, 
+                 root: str, 
+                 mol_repr ='2d_graph', 
+                 source ='smiles'):
         
         self.name = dataset_name
         self.root = osp.join(root, dataset_name)
-        self.task_type = task_type
         self.mol_repr = mol_repr
+        self.source = source
+        if source not in ['smiles', 'inchi']:
+            raise ValueError(f'source must be either "smiles" or "inchi"')
+        if mol_repr not in ['2d_graph', '3d_graph']:
+            raise ValueError(f'mol_repr must be either "2d_graph" or "3d_graph"')
         
         print(f'dataset stored in {self.root}')
-        
-        if self.task_type == 'regression':
-            raise ValueError('Regression task is not supported yet')
-
-        # if self.name not in ['AID2689', 'AID488997', 'AID435008'] and self.task_type == 'regression':
-        #     raise ValueError(f'{self.name} is not a regression dataset')
-        
         super(WelQrateDataset, self).__init__(self.root)
-        
         self.data, self.slices = torch.load(self.processed_paths[0])
-
         y = self.y.squeeze()
         self.num_active = len([x for x in y if x == 1])
         self.num_inactive = len([x for x in y if x == 0])
@@ -47,7 +70,7 @@ class WelQrateDataset(InMemoryDataset):
         print(f"Number of inactive molecules: {self.num_inactive}")
 
     @property
-    def dataset_info(self):
+    def welqrate_dataset_catalog(self):
         return {
                 "AID1798": {
                     "raw_url": "https://vanderbilt.box.com/shared/static/cd2dpdinu8grvi8dye3gi9bzsdt659d1.zip",
@@ -114,30 +137,30 @@ class WelQrateDataset(InMemoryDataset):
                 }
                 }   
 
-
     @property
     def raw_file_names(self):
-        # List files in the raw directory that match the dataset pattern
         pattern_csv = os.path.join(self.raw_dir, f'raw_{self.name}_*.csv')
         pattern_sdf = os.path.join(self.raw_dir, f'raw_{self.name}_*.sdf')
         files_csv = glob(pattern_csv)
         files_sdf = glob(pattern_sdf)
         return [os.path.basename(f) for f in files_csv + files_sdf]
     
-    # need to change inchi/smiles to 2dmol
     @property
     def processed_file_names(self):
-        return [f'processed_{self.mol_repr}_{self.name}.pt'] # example: processed_2dmol_AID1798.pt, processed_3dmol_AID1798.pt
+        if self.mol_repr == '2d_graph':
+            return [f'processed_{self.mol_repr}_{self.source}_{self.name}.pt'] 
+        elif self.mol_repr == '3d_graph':
+            return [f'processed_{self.mol_repr}_{self.name}.pt'] 
     
     @property
     def processed_dir(self):
-        return osp.join(self.root, 'processed', self.mol_repr) # example: processed/2dmol
+        return osp.join(self.root, 'processed', self.mol_repr) 
 
     def download(self):
         os.makedirs(osp.join(self.root, 'raw'), exist_ok=True)
         os.makedirs(osp.join(self.root, 'split'), exist_ok=True)
         
-        dataset_info = self.dataset_info.get(self.name)
+        dataset_info = self.welqrate_dataset_catalog.get(self.name)
         if not dataset_info:
             print(f"Download information for {self.name} is not available.")
             return
@@ -155,7 +178,7 @@ class WelQrateDataset(InMemoryDataset):
             os.remove(raw_zip_path)
 
         # Download and extract split files
-        if not os.listdir(osp.join(self.root, 'split')):  # Check if split directory is empty
+        if not os.listdir(osp.join(self.root, 'split')): 
             print(f"Downloading {self.name} split files...")
             split_zip_path = osp.join(self.root, 'split', f'{self.name}_split.zip')
             subprocess.run(['curl', '-L', dataset_info['split_url'], '--output', split_zip_path], check=True)
@@ -166,19 +189,16 @@ class WelQrateDataset(InMemoryDataset):
             print("Removing split zip file...")
             os.remove(split_zip_path)
 
-
     def process(self):
-
         print(f'molecule representation: {self.mol_repr}')
-        if self.mol_repr == '2dmol':   # combine smiles and inchi to 2dmol later
+        if self.mol_repr == '2d_graph':   
             self.file_type = '.csv'
-        elif self.mol_repr == '3dmol':
+        elif self.mol_repr == '3d_graph':
             self.file_type = '.sdf'
         print(f'processing dataset {self.name}')
         RDLogger.DisableLog('rdApp.*')
         
         data_list = []
-
         mol_id = 0
         
         for file_name, label in [(f'{self.name}_actives{self.file_type}', 1),
@@ -187,31 +207,28 @@ class WelQrateDataset(InMemoryDataset):
             source_path = os.path.join(self.root, 'raw', file_name)
             print(f'loaded raw file from {source_path}')
             
-            if self.mol_repr == '2dmol':
+            if self.mol_repr == '2d_graph':
                 inchi_list = pd.read_csv(source_path, sep=',')['InChI'].tolist()
                 cid_list = pd.read_csv(source_path, sep=',')['CID'].tolist() 
                 smiles_list = pd.read_csv(source_path, sep=',')['SMILES'].tolist()
 
-                for i, mol in tqdm(enumerate(inchi_list), total = len(inchi_list)):
-                    pyg_data = inchi2graph(mol)
-
+                for i, _ in tqdm(enumerate(cid_list), total=len(inchi_list)):
+                    if self.source == 'inchi':
+                        pyg_data = inchi2graph(inchi_list[i])
+                    elif self.source == 'smiles':
+                        pyg_data = smiles2graph(smiles_list[i])
                     pyg_data.y = torch.tensor([label], dtype=torch.int) 
-
-                    pyg_data.pubchem_cid = torch.tensor([int(cid_list[i])], dtype=torch.int)
-                    pyg_data.mol_id = torch.tensor([mol_id], dtype=torch.int)  # index of the molecule in the dataset
-                    pyg_data.smiles = smiles_list[i]
-                    pyg_data.mol_id = torch.tensor([mol_id], dtype=torch.int)
+                    pyg_data.pubchem_cid = torch.tensor(int(cid_list[i]), dtype=torch.int)
+                    pyg_data.mol_id = torch.tensor(mol_id, dtype=torch.int)
                     data_list.append(pyg_data)
                     mol_id += 1
                     
-            elif self.mol_repr == '3dmol':
-                
+            elif self.mol_repr == '3d_graph':
                 df = pd.read_csv(f'{source_path[:-4]}.csv')
                 smiles_dict = df.set_index('CID')['SMILES'].to_dict()
                 inchi_dict = df.set_index('CID')['InChI'].to_dict()
 
                 mol_conformer_list, cid_list = sdffile2mol_conformer(source_path)
-                # get the smiles/inchi from the csv file with CID
                 
                 for i, (mol, conformer) in tqdm(enumerate(mol_conformer_list), total=len(mol_conformer_list)):
                     pyg_data = mol_conformer2graph3d(mol, conformer)
@@ -225,9 +242,12 @@ class WelQrateDataset(InMemoryDataset):
                     data_list.append(pyg_data)
                     mol_id += 1
         
-        
         data, slices = self.collate(data_list)
-        processed_file_path = os.path.join(self.processed_dir, f'processed_{self.mol_repr}_{self.name}.pt')
+        if self.mol_repr == '2d_graph':
+            processed_file_path = os.path.join(self.processed_dir, f'processed_{self.mol_repr}_{self.source}_{self.name}.pt')
+        elif self.mol_repr == '3d_graph':
+            processed_file_path = os.path.join(self.processed_dir, f'processed_{self.mol_repr}_{self.name}.pt')
+        
         torch.save((data, slices), processed_file_path)
 
         
@@ -260,10 +280,17 @@ class WelQrateDataset(InMemoryDataset):
         print(f'valid set: {num_active_valid} actives and {len(split_dict["valid"]) - num_active_valid} inactives')
         num_active_test = len([x for x in y[split_dict['test']] if x == 1])
         print(f'test set: {num_active_test} actives and {len(split_dict["test"]) - num_active_test} inactives')
-
-
         
         return split_dict
 
+    def get_dataset_info(self):
+        dataset_info = {
+            'name': self.name,
+            'mol_repr': self.mol_repr,
+            'source': self.source,
+            'num_active': self.num_active,
+            'num_inactive': self.num_inactive
+        }
+        return dataset_info
 
 

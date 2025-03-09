@@ -703,12 +703,11 @@ class SphereNet(torch.nn.Module):
 
 
     def forward(self, batch_data):
-        x, z, pos, batch, edge_index = batch_data.x , batch_data.one_hot_atom, batch_data.pos, batch_data.batch, batch_data.edge_index
+        x, z, pos, batch, edge_index = batch_data.x , batch_data.x_one_hot, batch_data.pos, batch_data.batch, batch_data.edge_index
 
         if self.energy_and_force:
             pos.requires_grad_()
             
-        # edge_index = radius_graph(pos, r=self.cutoff, batch=batch)
         num_nodes=z.size(0)
         dist, angle, torsion, i, j, idx_kj, idx_ji = xyz_to_dat(pos, edge_index, num_nodes, use_torsion=True)
 

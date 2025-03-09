@@ -64,34 +64,3 @@ class bcl_MLP(Module):
 
 
 
-import unittest
-import torch
-from torch_geometric.data import Data, Batch
-
-class TestMLP(unittest.TestCase):
-    def test_output_shape(self):
-        # Create a random tensor of shape (num_nodes, input_dim) for each graph
-        num_nodes1, num_nodes2 = 5, 7
-        input_dim = 10
-        x1 = torch.randn(num_nodes1, input_dim)
-        x2 = torch.randn(num_nodes2, input_dim)
-
-        # Create a Data object for each graph with x as the node features
-        data1 = Data(x=x1)
-        data2 = Data(x=x2)
-
-        # Create a Batch object from the list of Data objects
-        batch = Batch.from_data_list([data1, data2])
-
-        # Create an instance of the MLP class
-        model = MLP(input_dim=input_dim)
-
-        # Pass the batch object through the model
-        output = model.forward(batch)
-        print('output shape: ', output.shape)
-
-        # Check that the output has the correct shape
-        self.assertEqual(output.shape, (2, 1))  # There are 2 graphs in the batch
-
-if __name__ == '__main__':
-    unittest.main()

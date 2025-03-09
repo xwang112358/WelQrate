@@ -1,9 +1,8 @@
-
 from torch_geometric.data import Data
 from rdkit import Chem
 import numpy as np
-from .features import (allowable_features, atom_to_feature_vector, atom_to_one_hot_vector,
- bond_to_feature_vector, atom_feature_vector_to_dict, bond_feature_vector_to_dict)
+from .features import (atom_to_feature_vector, atom_to_one_hot_vector,
+ bond_to_feature_vector, atom_feature_vector_to_dict, bond_feature_vector_to_dict) 
 import rdkit.Chem.rdMolDescriptors as rdMolDescriptors
 import rdkit.Chem.EState as EState
 import rdkit.Chem.rdPartialCharges as rdPartialCharges
@@ -13,6 +12,11 @@ from torch_geometric.nn import radius_graph
 
 
 def ReorderCanonicalRankAtoms(mol):
+    """
+    Reorder the atoms in the molecule based on the canonical rank.
+    :param mol: rdkit.Chem.rdchem.Mol
+    :return: rdkit.Chem.rdchem.Mol, list
+    """
     order = tuple(zip(*sorted([(j, i) for i, j in enumerate(Chem.CanonicalRankAtoms(mol))])))[1]
     mol_renum = Chem.RenumberAtoms(mol, order)
     return mol_renum, order
@@ -58,7 +62,7 @@ def smiles2graph(smiles_string, removeHs=True, reorder_atoms=False):
     """
     try:
         mol = Chem.MolFromSmiles(smiles_string)
-        mol = mol if removeHs else Chem.AddHs(mol)
+        mol = Chem.RemoveHs(mol) if removeHs else mol
         if reorder_atoms:
             mol, _ = ReorderCanonicalRankAtoms(mol)
 
@@ -66,12 +70,10 @@ def smiles2graph(smiles_string, removeHs=True, reorder_atoms=False):
         print(f'cannot generate mol, error: {e}, smiles: {smiles_string}')
 
     if mol is None:
-
         smiles = smiles_cleaner(smiles_string)
         try:
             mol = Chem.MolFromSmiles(smiles)
-
-            mol = mol if removeHs else Chem.AddHs(mol)
+            mol = Chem.RemoveHs(mol) if removeHs else mol
             if reorder_atoms:
                 mol, _ = ReorderCanonicalRankAtoms(mol)
 
@@ -81,31 +83,25 @@ def smiles2graph(smiles_string, removeHs=True, reorder_atoms=False):
 
         if mol is None:
             raise ValueError(f'cannot generate molecule with smiles: {smiles_string}')
-        # Create an empty data object
-            # graph = Data(
-            #     edge_index=np.empty((2, 0), dtype=np.int64),
-            #     edge_attr=np.empty((0, 3), dtype=np.int64),
-            #     x=np.empty((0, 39), dtype=np.int64),
-            #     num_nodes=0,
-            #     num_edges=0,
-            #     smiles=smiles_string,
-            #     valid=False
-            # )
-            # print('Cannot generate molecule with smiles:', smiles_string, 'Returning empty graph')
     else:
         # calculate Gasteiger charges
         rdPartialCharges.ComputeGasteigerCharges(mol)
         
         # atoms
         atom_features_list = []
+        # atom_num_list = []
+        one_hot_atom_list = []
         for atom in mol.GetAtoms():
+            # atom_num_list.append(atom.GetAtomicNum())
             atom_features_list.append(atom_to_feature_vector(atom))
+            one_hot_atom_list.append(atom_to_one_hot_vector(atom))
 
         atom_features_list = atomized_mol_level_features(atom_features_list, mol)
         x = torch.tensor(atom_features_list, dtype=torch.float32)
+        # atom_num = torch.tensor(atom_num_list, dtype=torch.int64)
+        one_hot_atom = torch.tensor(one_hot_atom_list, dtype=torch.int64)
 
         # bonds
-        num_bond_features = 3  # bond type, bond stereo, is_conjugated
         if len(mol.GetBonds()) > 0:  # mol has bonds
             edges_list = []
             edge_features_list = []
@@ -129,24 +125,24 @@ def smiles2graph(smiles_string, removeHs=True, reorder_atoms=False):
                 edges_list.append((j, i))
                 edge_features_list.append(bond_attr)
 
-            # data.edge_index: Graph connectivity in COO format with shape [2, num_edges]
-            edge_index = torch.tensor(edges_list).t().contiguous()
-            # data.edge_attr: Edge feature matrix with shape [num_edges, num_edge_features]
+            edge_index = torch.tensor(edges_list, dtype=torch.long).t().contiguous()
             edge_attr = torch.tensor(edge_features_list, dtype=torch.float32)
 
         else:  # mol has no bonds
-            edge_index = torch.from_numpy(np.empty((2, 0)))
-            edge_attr = torch.from_numpy(np.empty((0, num_bond_features)))
-            print('Warning: molecule does not have bond:', smiles_string)
+            print('molecule does not have bond:', smiles_string)
+            edge_index = torch.empty((2, 0), dtype=torch.long)
+            edge_attr = torch.empty((0, 7), dtype=torch.float32)
 
         graph = Data(
             edge_index=edge_index,
             edge_attr=edge_attr,
             x=x,
+            x_one_hot=one_hot_atom,
+            # atom_num=atom_num,
             num_nodes=torch.tensor([len(x)]),
             num_edges=len(edge_index[0]),
             smiles=smiles_string
-                            )
+        )
 
     return graph
 
@@ -176,16 +172,16 @@ def inchi2graph(inchi_string, removeHs=True, reorder_atoms=False):
         
         # atoms
         atom_features_list = []
-        atom_num_list = []
+        # atom_num_list = []
         one_hot_atom_list = []
         for atom in mol.GetAtoms():
-            atom_num_list.append(atom.GetAtomicNum())
+            # atom_num_list.append(atom.GetAtomicNum())
             atom_features_list.append(atom_to_feature_vector(atom))
             one_hot_atom_list.append(atom_to_one_hot_vector(atom))
 
         atom_features_list = atomized_mol_level_features(atom_features_list, mol)
         x = torch.tensor(atom_features_list, dtype=torch.float32)
-        atom_num = torch.tensor(atom_num_list, dtype=torch.int64)
+        # atom_num = torch.tensor(atom_num_list, dtype=torch.int64)
         one_hot_atom = torch.tensor(one_hot_atom_list, dtype=torch.int64)
 
         # bond features: bond type, bond stereo, is_conjugated
@@ -224,8 +220,8 @@ def inchi2graph(inchi_string, removeHs=True, reorder_atoms=False):
             edge_index=edge_index,
             edge_attr=edge_attr,
             x=x,
-            one_hot_atom=one_hot_atom,
-            atom_num=atom_num,
+            x_one_hot=one_hot_atom,
+            # atom_num=atom_num,
             num_nodes=torch.tensor([len(x)]),
             num_edges=len(edge_index[0]),
             inchi=inchi_string,
@@ -234,8 +230,7 @@ def inchi2graph(inchi_string, removeHs=True, reorder_atoms=False):
     return graph
     
 
-### Functions that convert sdf files to molecular graphs
-
+# Functions that convert sdf files to molecular graphs
 def sdffile2graph3d_lst(sdffile):
     """convert SDF file into a list of 3D graph.
 
@@ -256,7 +251,8 @@ def sdffile2mol_conformer(sdffile):
     Args:
       sdffile: str, file
     Returns:
-      smiles_lst: a list of molecule conformers.
+      mol_conformer_lst: a list of (molecule, conformer). 
+      cid_lst: a list of pubchem cid of the molecules
     """
 
     supplier = Chem.SDMolSupplier(sdffile, removeHs=True, sanitize=False)
@@ -273,30 +269,23 @@ def sdffile2mol_conformer(sdffile):
     return mol_conformer_lst, cid_lst
 
 
-def mol_conformer2graph3d(mol, conformer, removeHs=True, reorder_atoms=False):
+def mol_conformer2graph3d(mol, conformer, removeHs=True, reorder_atoms=False,
+                          r=6.0, max_num_neighbors=50):
     """convert (molecule, conformer) into a 3D graph.
     Args:
       mol_conformer: tuple (molecule, conformer)
-
+      r: radius of the graph
+      max_num_neighbors: maximum number of neighbors
     Returns:
-      graph3d: a 3D pyg graph.
+      graph3d: a 3D pyg graph with 3D coordinates
     """
     if mol is None:
-            # Create an empty data object
-        # graph = Data(
-        #     edge_index=torch.empty((2, 0), dtype=torch.long),
-        #     edge_attr=torch.empty((0, 3), dtype=torch.float32),
-        #     x=torch.empty((0, 28), dtype=torch.int64),
-        #     num_nodes=0,
-        #     num_edges=0,
-        #     valid=False
-        # )
         raise ValueError(f'cannot generate molecule with conformer: {conformer}')
     else:
         mol = Chem.RemoveHs(mol, sanitize=False) if removeHs else mol
         if reorder_atoms:
-            mol, _ = ReorderCanonicalRankAtoms(mol)
-        
+            mol, _ = ReorderCanonicalRankAtoms(mol)  
+
         # calculate Gasteiger charges
         rdPartialCharges.ComputeGasteigerCharges(mol)
         
@@ -304,6 +293,7 @@ def mol_conformer2graph3d(mol, conformer, removeHs=True, reorder_atoms=False):
         atom_features_list = []
         atom_num_list = []
         one_hot_atom_list = []
+
         for atom in mol.GetAtoms():
             atom_num_list.append(atom.GetAtomicNum())
             atom_features_list.append(atom_to_feature_vector(atom))
@@ -314,35 +304,29 @@ def mol_conformer2graph3d(mol, conformer, removeHs=True, reorder_atoms=False):
         atom_num = torch.tensor(atom_num_list, dtype=torch.int64)
         one_hot_atom = torch.tensor(one_hot_atom_list, dtype=torch.int64)
 
-        # get 3D features: pos + edge_index
         positions = []
         for i in range(len(atom_num)):
             pos = conformer.GetAtomPosition(i)
             coordinate = np.array([pos.x, pos.y, pos.z]).reshape(1, 3)
             positions.append(coordinate)
         positions = np.concatenate(positions, 0)
-                      
-        edge_index = radius_graph(torch.tensor(positions), r=6.0, max_num_neighbors=50).to(torch.long)
+        
+        # edge
+        edge_index = radius_graph(torch.tensor(positions), r=r, max_num_neighbors=max_num_neighbors).to(torch.long)
                     
         graph = Data(
-            edge_index=edge_index,
-            x=x,
-            pos= torch.tensor(positions, dtype=torch.float32),
-            one_hot_atom=one_hot_atom,
-            atom_num=atom_num,
-            num_edges=len(edge_index[0]),
+            x = x,
+            edge_index = edge_index,
+            pos = torch.tensor(positions, dtype=torch.float32),
+            x_one_hot = one_hot_atom,
+            atom_num = atom_num,
+            num_edges = len(edge_index[0]),
             num_nodes = torch.tensor([len(x)]),
         )
     
     return graph
 
-
-def distance3d(coordinate_1, coordinate_2):
-    return np.sqrt(
-        sum([(c1 - c2)**2 for c1, c2 in zip(coordinate_1, coordinate_2)]))
-
 pattern_dict = {'[NH-]': '[N-]', '[OH2+]':'[O]'}
-
 
 def smiles_cleaner(smiles):
     '''
@@ -364,9 +348,6 @@ def one_hot_vector(val, lst):
 	if val not in lst:
 		val = lst[-1]
 	return map(lambda x: x == val, lst)
-
-
-
 
 
 ### Test

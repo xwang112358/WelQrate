@@ -161,24 +161,18 @@ class SchnetLayer(torch.nn.Module):
 
     def forward(self, batch_data):
 
-        x, z, pos, batch, edge_index = batch_data.x , batch_data.one_hot_atom, batch_data.pos, batch_data.batch, batch_data.edge_index
+        x, z, pos, batch, edge_index = batch_data.x , batch_data.x_one_hot, batch_data.pos, batch_data.batch, batch_data.edge_index
         if self.energy_and_force:
             pos.requires_grad_()
 
-        # edge_index = radius_graph(pos, r=self.cutoff, batch=batch)
         row, col = edge_index
         dist = (pos[row] - pos[col]).norm(dim=-1)
         
         dist_emb = self.dist_emb(dist)
-
-        # one_hot: use 12-dimensional one-hot encoding for atom type; get the index and embed it
-        # with torch.nn.Embedding; otherwise, use 28-dimensional continuous features and MLP to embed
         if self.one_hot:
-            # print('using one-hot encoding')
             z_index = torch.argmax(z, dim=1)
             v = self.atom_embedding(z_index)
         else:
-            # print('using all features')
             v = self.feature_embedding(x)
             
         for update_e, update_v in zip(self.update_es, self.update_vs):
@@ -215,7 +209,6 @@ class SchNet_Model(torch.nn.Module):
         self.ff_dropout = Dropout(p=0.25)
 
     def forward(self, batch_data):
-        # batch_data.z = batch_data.x.squeeze()
         graph_embedding = self.encoder(batch_data)
 
         graph_embedding = self.ffn_dropout(graph_embedding)
@@ -224,34 +217,3 @@ class SchNet_Model(torch.nn.Module):
         return prediction
 
 
-
-# import unittest
-# from torch_geometric.data import Data
-
-# class TestSchNet(unittest.TestCase):
-#     def test_forward(self):
-        
-#         from torch_geometric.nn.pool import radius_graph
-
-#         num_atoms = 5
-#         feature_dim = 28  # Feature dimension per atom
-
-#         features = torch.randn(2, num_atoms, feature_dim)
-#         positions = torch.randn(2, num_atoms, 3)
-
-#         batch_indices = torch.cat([torch.zeros(num_atoms, dtype=torch.long), 
-#                                     torch.ones(num_atoms, dtype=torch.long)])
-
-#         # Generate edge_index based on the Euclidean distance of nodes
-#         edge_index = radius_graph(positions.view(-1, 3), r=10.0, batch=batch_indices)
-
-#         batch_data = Data(x=features.view(-1, feature_dim), pos=positions.view(-1, 3), batch=batch_indices, edge_index=edge_index)
-#         print('batch data x shape: ', batch_data.x.shape)
-#         model = SchNet(energy_and_force=False, num_layers=3, hidden_channels=28, num_filters=128, num_gaussians=50, out_channels=32)
-
-#         output = model(batch_data)
-#         print("Output shape:", output.shape)
-#         # self.assertEqual(output.shape, (2, 32))
-
-# if __name__ == '__main__':
-#     unittest.main()

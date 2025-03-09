@@ -3,6 +3,17 @@ from torch.utils.data import WeightedRandomSampler
 import torch
 
 def get_train_loader(train_dataset, batch_size, num_workers, seed):
+    """
+    Get train loader with over sampling to handle imbalanced dataset.
+    Args:
+        train_dataset: training dataset
+        batch_size: batch size for training
+        num_workers: number of workers for data loading
+        seed: random seed for reproducibility
+    Returns:
+        train_loader: DataLoader with weighted random sampling
+    
+    """
     num_train_active = len(torch.nonzero(torch.tensor([data.y for data in train_dataset])))
     num_train_inactive = len(train_dataset) - num_train_active
     print(f'training # of molecules: {len(train_dataset)}, actives: {num_train_active}')
@@ -31,7 +42,14 @@ def get_train_loader(train_dataset, batch_size, num_workers, seed):
 
     return train_loader
 
-def get_test_loader(test_dataset, batch_size, num_workers, seed):
+def get_test_loader(test_dataset, batch_size, num_workers):
+    """
+    Get test loader.
+    Args:
+        test_dataset: test dataset
+        batch_size: batch size for testing
+        num_workers: number of workers for data loading
+    """
     num_test_active = len(torch.nonzero(torch.tensor([data.y for data in test_dataset])))
     print(f'test # of molecules: {len(test_dataset)}, actives: {num_test_active}')
 
@@ -45,7 +63,14 @@ def get_test_loader(test_dataset, batch_size, num_workers, seed):
 
     return test_loader
 
-def get_valid_loader(valid_dataset, batch_size, num_workers, seed):
+def get_valid_loader(valid_dataset, batch_size, num_workers):
+    """
+    Get validation loader.
+    Args:
+        valid_dataset: validation dataset
+        batch_size: batch size for validation
+        num_workers: number of workers for data loading
+    """
     num_valid_active = len(torch.nonzero(torch.tensor([data.y for data in valid_dataset])))
     print(f'validation # of molecules: {len(valid_dataset)}, actives: {num_valid_active}')
 
