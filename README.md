@@ -8,7 +8,7 @@ conda create -n welqrate python=3.9
 ```
 
 ```
-pip install welqrate==0.1.1
+pip install welqrate
 ```
 
 
