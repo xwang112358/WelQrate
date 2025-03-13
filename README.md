@@ -8,33 +8,20 @@ conda create -n welqrate python=3.9
 ```
 
 ```
-conda install pytorch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 pytorch-cuda=12.1 -c pytorch -c nvidia
-```
-
-```
-pip install torch_geometric==2.3.1
-```
-
-```
-pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.1.0+cu121.html
-```
-
-
-```
-pip install -r requirements.txt
+pip install welqrate==0.1.1
 ```
 
 
 ## Load the Dataset
-Users can download and preprocess the datasets by calling `WelQrateDataset` class. Available datasets include AID1798, AID435008, AID435034, AID1843, AID2258, AID463087, AID488997, AID2689, and AID485290. Please refer to our [website](https://www.welqrate.org/) for more details. Besides, users can choose between 2D and 3D molecular representations by setting `mol_repr` to `2dmol` or `3dmol`.
+Users can download and preprocess the datasets by calling `WelQrateDataset` class. Available datasets include AID1798, AID435008, AID435034, AID1843, AID2258, AID463087, AID488997, AID2689, and AID485290. Please refer to our [website](https://www.welqrate.org/) for more details. Besides, users can choose between 2D and 3D molecular representations by setting `mol_repr` to `2d_graph` or `3d_graph`.
 
 ```python
 from welqrate.dataset import WelQrateDataset
 # Load the 2D dataset
-AID1798_dataset_2d = WelQrateDataset(dataset_name = 'AID1798', root =f'./datasets', mol_repr ='2dmol')
+AID1798_dataset_2d = WelQrateDataset(dataset_name = 'AID1798', root =f'./datasets', mol_repr ='2d_graph')
 
 # Load the 3D dataset 
-AID1843_dataset_3d = WelQrateDataset(dataset_name = 'AID1843', root =f'./datasets', mol_repr ='3dmol')
+AID1843_dataset_3d = WelQrateDataset(dataset_name = 'AID1843', root =f'./datasets', mol_repr ='3d_graph')
 
 # Load a split dictionary
 split_dict = AID1798_dataset_2d.get_idx_split(split_scheme ='random_cv1') # or 'scaffold_seed1; we provide 1-5 for both random_cv and scaffold_seed
@@ -42,27 +29,44 @@ split_dict = AID1798_dataset_2d.get_idx_split(split_scheme ='random_cv1') # or '
 ```
 
 ## Train a model
-We can store hyperparameters related to model, training scheme, and dataset in a configuration file. Users can refer to configuration files in `./config/` for different models. Then, we can config the model and start training by calling `train` function. After training, results are automatically saved in `./results/` folder.
+We can store hyperparameters related to model, training scheme, and dataset in a configuration file. Users can refer to configuration files in `./config/` for different models. Then, we can config the model and start training by calling `train` function. 
 
 ```python
-from welqrate.train import train
-from welqrate.models.gnn2d.GCN import GCN_Model
-import configparser
-import torch
+dataset_name = 'AID1798'
+split_scheme = 'random_cv1'
+AID1798_2d = WelQrateDataset(dataset_name=dataset_name, root='./datasets', mol_repr='2d_graph',
+                             source='inchi')
+split_dict = AID1798_2d.get_idx_split(split_scheme)
 
+train_loader = get_train_loader(AID1798_2d[split_dict['train']], batch_size=128, num_workers=0, seed=1)
+valid_loader = get_valid_loader(AID1798_2d[split_dict['valid']], batch_size=128, num_workers=0)
+test_loader = get_test_loader(AID1798_2d[split_dict['test']], batch_size=128, num_workers=0)
+
+
+config = {}
+# default train config
+for config_file in ['./config/train.yaml', './config/gcn.yaml']:
+    with open(config_file) as file:
+        config.update(yaml.safe_load(file))
+
+# initialize model
+hidden_channels = config['model']['hidden_channels']
+num_layers = config['model']['num_layers']
+model = GCN_Model(hidden_channels = hidden_channels, 
+                  num_layers = num_layers)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-config = configparser.ConfigParser()
-config.read(['./config/train.cfg', './config/gcn.cfg'])
+model.to(device)
 
-# Load the model configuration
-hidden_channels = int(config['MODEL']['hidden_channels'])
-num_layers = int(config['MODEL']['num_layers'])
-model = GCN_Model(hidden_channels=hidden_channels, num_layers=num_layers).to(device)
+train(model = model,
+      train_loader = train_loader,
+      valid_loader = valid_loader,
+      test_loader = test_loader,
+      config = config,
+      device = device,
+      save_path = f'./results/{dataset_name}/{split_scheme}/gcn'
+      )
 
-# Train the model
-train(model, AID1798_dataset_2d, config, device)
 ```
-Please check out `example.py` for more examples.
 
 ## Citation
 If you find our work helpful, please cite our paper:

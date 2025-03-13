@@ -10,7 +10,7 @@ data:
   one_hot: false
 
 train:
-  num_epochs: 2
+  num_epochs: 50
   batch_size: 128
   warmup_percentage: 0.1
   peak_lr: 1e-3

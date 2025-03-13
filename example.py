@@ -16,6 +16,7 @@ train_loader = get_train_loader(AID1798_2d[split_dict['train']], batch_size=128,
 valid_loader = get_valid_loader(AID1798_2d[split_dict['valid']], batch_size=128, num_workers=0)
 test_loader = get_test_loader(AID1798_2d[split_dict['test']], batch_size=128, num_workers=0)
 
+print(len(train_loader))
 
 config = {}
 # default train config

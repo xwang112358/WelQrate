@@ -35,9 +35,9 @@ class PolynomialDecayLR(_LRScheduler):
     def _get_closed_form_lr(self):
         assert False
 
-def get_scheduler(optimizer, config, dataset):
+def get_scheduler(optimizer, config, train_loader):
     # Calculate total iterations correctly
-    num_train_batches = math.ceil(len(dataset)/int(config['train']['batch_size']))
+    num_train_batches = len(train_loader)
     tot_iterations = num_train_batches * int(config['train']['num_epochs'])
     print(f'tot_iterations={tot_iterations}')
     
@@ -55,7 +55,6 @@ def get_scheduler(optimizer, config, dataset):
             end_lr=float(config['train']['end_lr']),
             power=1.0,
         ),
-        'dataset_name': 'learning_rate',
         'interval': 'step',
         'frequency': 1,
     }
